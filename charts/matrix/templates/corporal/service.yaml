@@ -1,0 +1,16 @@
+{{- if .Values.corporal.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "corporal.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "corporal.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: corporal
+      port: 80
+      protocol: TCP
+      targetPort: corporal
+  selector: {{- include "corporal.matchLabels" . | nindent 4 }}
+{{- end }}

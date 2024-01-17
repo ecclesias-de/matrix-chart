@@ -1,0 +1,18 @@
+{{- if .Values.corporal.pvc.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "corporal.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "corporal.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.corporal.pvc.accessMode }}
+  {{- with .Values.corporal.pvc.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if .Values.corporal.pvc.storageClassName }}
+  storageClassName: {{ .Values.corporal.pvc.storageClassName }}
+  {{- end}}
+{{- end }}

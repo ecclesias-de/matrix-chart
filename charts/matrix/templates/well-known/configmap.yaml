@@ -1,0 +1,26 @@
+{{- if .Values.wellknown.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "wellknown.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "wellknown.labels" . | nindent 4 }}
+data:
+  default.conf: |
+    server {
+        listen       8080;
+        server_name  _;
+
+        add_header 'Access-Control-Allow-Origin' '*';
+
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+    }
+  server: |
+    {{- tpl ( .Values.wellknown.server | toJson ) . | nindent 4 }}
+
+  client: |
+    {{- tpl ( .Values.wellknown.client | toJson ) . | nindent 4 }}
+{{- end }}

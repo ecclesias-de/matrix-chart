@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        # {{- if .Values.inject_entrypoint }}
+        # checksum/entrypoint: {{ include (print $.Template.BasePath "/entrypoint.yaml") . | sha256sum }}
+        # {{- end }}
+    spec:
+      securityContext:
+        runAsUser: 991
+        runAsGroup: 991
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.deployment.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.deployment.imagePullSecrets}}
+      - {{ toYaml . }}
+      {{- end }}
+      {{- end }}
+      containers: 
+      - name: sygnal
+        image: {{ .Values.deployment.image.repository }}:{{ .Chart.AppVersion }}
+        imagePullPolicy: IfNotPresent
+        {{- if .Values.debug.diagnoseMode.enabled }}
+        command: {{- toYaml .Values.debug.diagnoseMode.command  | nindent 12 }}
+        {{- else }}
+        command:
+          - /usr/local/bin/python
+          - -m
+          - sygnal.sygnal
+        # command:
+        #   - /usr/local/bin/python
+        #   - /entrypoint.py
+        {{- end }}
+        env:
+          - name: SYGNAL_CONF
+            value:  /etc/sygnal/config.yaml
+        {{- if .Values.deployment.resources }}
+        resources: {{- toYaml .Values.deployment.resources | nindent 12 }}
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: 5000
+        - name: metrics
+          containerPort: 8000
+        {{- if .Values.debug.securityContext.enabled }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/sygnal/config.yaml
+          subPath: config.yaml
+          readOnly: true
+        # - name: secret
+        #   mountPath: /etc/sygnal/gcm_api_key
+        #   subPath: gcm_api_key
+        #   readOnly: true
+        # - name: secret
+        #   mountPath: /etc/sygnal/apple_certificate
+        #   subPath: apple_certificate
+        #   readOnly: true 
+        {{- if .Values.inject_entrypoint }}
+        - name: entrypoint  
+          mountPath: /entrypoint.py
+          subPath: entrypoint.py
+          readOnly: true
+        {{- end }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "basename" . }}
+      # - name: secret
+      #   secret:
+      #     secretName: {{ template "secret" . }}
+      {{- if .Values.inject_entrypoint }}
+      - name: entrypoint
+        configMap:
+          name: entrypoint-{{ template "basename" . }}
+      {{- end }}

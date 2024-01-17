@@ -1,0 +1,11 @@
+{{- if .Values.corporal.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "corporal.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "corporal.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {{- tpl ( .Values.corporal.config | toJson ) . | nindent 4 }}
+{{- end }}

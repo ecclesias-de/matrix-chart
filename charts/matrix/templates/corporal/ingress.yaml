@@ -1,0 +1,27 @@
+{{- if .Values.corporal.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "corporal.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "corporal.labels" . | nindent 4 }}
+  {{- if .Values.corporal.ingress.annotations }}
+  annotations: {{ .Values.corporal.ingress.annotations | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  rules:
+    - host: {{ .Values.synapse.ingress.hostname }}
+      http:
+        paths:
+          - path: /_matrix/corporal/
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "corporal.basename" . }}
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - {{ .Values.synapse.ingress.hostname }}
+      secretName: {{ printf "%s-tls" .Values.synapse.ingress.hostname }}
+{{- end }}

@@ -1,0 +1,18 @@
+{{- if not .Values.synapse.pvc.existing_pvc -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "synapse.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "synapse.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.synapse.pvc.accessMode }}
+  {{- with .Values.synapse.pvc.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if .Values.synapse.pvc.storageClassName }}
+  storageClassName: {{ .Values.synapse.pvc.storageClassName }}
+  {{- end}}
+{{- end }}

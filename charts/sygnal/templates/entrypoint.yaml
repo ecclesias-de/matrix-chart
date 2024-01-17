@@ -1,0 +1,11 @@
+{{- if .Values.inject_entrypoint }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: entrypoint-{{ include "basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "labels" . | nindent 4 }}
+data:
+  entrypoint.py: |
+    {{- .Files.Get "files/entrypoint.py" | nindent 4 }}
+{{- end }}

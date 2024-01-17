@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "element.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "element.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "element.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "element.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/element/configmap.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.element.deployment.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.element.deployment.imagePullSecrets}}
+      - {{ toYaml . }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: element
+        image: {{ .Values.element.deployment.image.repository }}:{{ .Values.element.deployment.image.tag }}
+        imagePullPolicy: IfNotPresent
+        {{- if .Values.debug.diagnoseMode.element.enabled }}
+        command: {{- toYaml .Values.debug.diagnoseMode.element.command  | nindent 12 }}
+        {{- end}}
+        {{- if .Values.element.deployment.resources }}
+        resources: {{- toYaml .Values.element.deployment.resources | nindent 12 }}
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: 8080
+        {{- if .Values.debug.securityContext.element.enabled }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /usr/share/element/config.json
+          subPath: config.json
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "element.basename" . }}

@@ -1,0 +1,67 @@
+{{- if .Values.wellknown.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "wellknown.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "wellknown.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "wellknown.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "wellknown.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/well-known/configmap.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.wellknown.deployment.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.wellknown.deployment.imagePullSecrets}}
+      - {{ toYaml . }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: nginx
+        image: {{ .Values.wellknown.deployment.image.repository }}:{{ .Values.wellknown.deployment.image.tag }}
+        imagePullPolicy: IfNotPresent
+        {{- if .Values.debug.diagnoseMode.wellknown.enabled}}
+        command: {{- toYaml .Values.debug.diagnoseMode.wellknown.command  | nindent 12 }}
+        {{- end}}
+        {{- if .Values.wellknown.deployment.resources }}
+        resources: {{- toYaml .Values.wellknown.deployment.resources | nindent 12 }}
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: 8080
+        {{- if .Values.debug.securityContext.wellknown.enabled }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+          readOnly: true
+        - name: config
+          mountPath: /usr/share/nginx/html/.well-known/matrix/server
+          subPath: server
+          readOnly: true
+        - name: config
+          mountPath: /usr/share/nginx/html/.well-known/matrix/client
+          subPath: client
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "wellknown.basename" . }}
+{{- end }}

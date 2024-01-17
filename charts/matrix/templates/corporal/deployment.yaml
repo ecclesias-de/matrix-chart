@@ -1,0 +1,105 @@
+ {{- if .Values.corporal.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "corporal.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "corporal.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "corporal.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "corporal.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/corporal/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/corporal/secret.yaml") . | sha256sum }}
+        # {{- if .Values.corporal.inject_entrypoint }}
+        # checksum/entrypoint: {{ include (print $.Template.BasePath "/corporal/entrypoint.yaml") . | sha256sum }}
+        # {{- end }}
+    spec:
+      securityContext:
+        runAsUser: 991
+        runAsGroup: 991
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.corporal.deployment.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.corporal.deployment.imagePullSecrets}}
+      - {{ toYaml . }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: corporal
+        image: {{ .Values.corporal.deployment.image.repository }}:{{ .Values.corporal.deployment.image.tag }}
+        imagePullPolicy: IfNotPresent
+        env:
+        # part of homeserver api endpoint hack: see values yaml
+        - name: HOMESERVER_API_ENDPOINT
+          value: http://{{ include "synapse.basename" . }}
+        {{- if .Values.debug.diagnoseMode.corporal.enabled }}
+        command: {{- toYaml .Values.debug.diagnoseMode.corporal.command  | nindent 12 }}
+        {{- else }}
+        command:
+          - /bin/sh
+          - -c
+          - |
+            cat /etc/corporal/config.json | sed \
+            -e s/__AUTHORIZATION_BEARER_TOKEN__/$(cat /etc/corporal/authorization_bearer_token )/g \
+            -e s/__AUTH_SHARED_SECRET__/$(cat /etc/corporal/auth_shared_secret )/g \
+            -e s/__REGISTRATION_SHARED_SECRET__/$(cat /etc/corporal/registration_shared_secret)/g \
+            -e s%__HOMESERVER_API_ENDPOINT__%${HOMESERVER_API_ENDPOINT}%g \
+            > /tmp/config.json
+            /matrix-corporal -config /tmp/config.json
+        {{- end}}
+        {{- if .Values.corporal.deployment.resources }}
+        resources: {{- toYaml .Values.corporal.deployment.resources | nindent 12 }}
+        {{- end }}
+        ports:
+        - name: client
+          containerPort: 41080
+        - name: corporal
+          containerPort: 41081
+        {{- if .Values.debug.securityContext.corporal.enabled }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        {{- end }}
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: config
+          mountPath: /etc/corporal/config.json
+          subPath: config.json
+          readOnly: true
+        - name: secret
+          mountPath: /etc/corporal/authorization_bearer_token
+          subPath: authorization_bearer_token
+          readOnly: true
+        - name: secret
+          mountPath: /etc/corporal/auth_shared_secret
+          subPath: shared_secret
+          readOnly: true
+        - name: synapse-secret
+          mountPath: /etc/corporal/registration_shared_secret
+          subPath: registration_shared_secret
+          readOnly: true
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+            claimName: {{ template "corporal.basename" . }}
+      - name: config
+        configMap:
+          name: {{ template "corporal.basename" . }}
+      - name: secret
+        secret:
+          secretName: {{ template "corporal.secret" . }}
+      - name: synapse-secret
+        secret:
+          secretName: {{ template "synapse.secret" . }}
+{{- end}}

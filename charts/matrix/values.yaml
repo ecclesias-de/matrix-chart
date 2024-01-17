@@ -1,0 +1,234 @@
+synapse:
+  # values inside these config are rended by the templating engin. See readme for usage and caveats.
+  homeserverConfig:
+    public_baseurl: "https://{{ .Values.synapse.ingress.hostname }}/"
+    pid_file: /data/homeserver.pid
+    listeners:
+      - port: 8009
+        tls: false
+        type: http
+        x_forwarded: true
+        resources:
+          - names: [client, federation, static]
+            compress: false
+      - port: 9000
+        tag: metrics
+        type: metrics
+    database:
+      name: psycopg2
+      txn_limit: 10000
+      args:
+        # user: set by entrypoint.py
+        # password: set by entrypoint.py
+        # dbname: set by entrypoint.py
+        # host: set by entrypoint.py
+        # port: set by entrypoint.py
+        cp_min: 5
+        cp_max: 10
+    log_config: /etc/synapse/log.yaml
+    media_store_path: /data/media_store
+    registration_shared_secret_path: /etc/synapse/registration_shared_secret
+    report_stats: false
+    #macaroon_secret_key: set by entrypoint.py
+    #form_secret: set by entrypoint.py
+    signing_key_path: "/etc/synapse/signing.key"
+    trusted_key_servers:
+      - server_name: "matrix.org"
+
+  # values inside these config are rended by the templating engin. See readme for usage and caveats.
+  logConfig:
+    version: 1
+    formatters:
+      precise:
+        format: '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(request)s - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: precise
+    loggers:
+      # This is just here so we can leave `loggers` in the config regardless of whether
+      # we configure other loggers below (avoid empty yaml dict error).
+      _placeholder:
+        level: "INFO"
+      synapse.storage.SQL:
+          # beware: increasing this to DEBUG will make synapse log sensitive
+          # information such as access tokens.
+        level: INFO
+    root:
+      level: INFO
+      handlers: [console]
+    disable_existing_loggers: false
+
+  deployment:
+    imagePullSecrets: []
+    image:
+      repository: matrixdotorg/synapse
+      tag: v1.98.0
+    resources: {}
+
+  ingress:
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    enabled: true
+    hostname: 
+
+  inject_entrypoint: true
+
+  secrets:
+    existingSecret:
+    registration_shared_secret: ""
+    signing_key: ""
+    macaroon_secret_key: ""
+    form_secret: ""
+
+  pvc:
+    accessMode: ReadWriteOnce
+    resources:
+      requests:
+        storage: 2Gi
+    storageClassName:
+    existingPvc:
+
+element:
+  # values inside these config are rended by the templating engin. See readme for usage and caveats.
+  config:
+    default_server_config:
+      m.homeserver:
+        base_url: "https://{{ .Values.synapse.ingress.hostname }}/"
+
+  deployment:
+    imagePullSecrets: []
+    image:
+      repository: dockerregistry.metaways.net/ebhh/element-build/element
+      tag: 117016
+    resources: {}
+
+  ingress:
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    enabled: true
+    hostname: ""
+
+wellknown:
+  enabled: true
+
+  # values inside these config are rended by the templating engin. See readme for usage and caveats.
+  server:
+    m.server: "{{ .Values.synapse.ingress.hostname }}:443"
+
+  # values inside these config are rended by the templating engin. See readme for usage and caveats.
+  client:
+    m.homeserver:
+      base_url: "https://{{ .Values.synapse.ingress.hostname }}/"
+
+  deployment:
+    imagePullSecrets: []
+    image:
+      repository: nginxinc/nginx-unprivileged
+      tag: 1.25.3-alpine3.18
+    resources: {}
+
+  ingress:
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    enabled: true
+
+corporal:
+  enabled: true
+
+  # values inside these config are rended by the templating engin. See readme for usage and caveats.
+  config:
+    Matrix:
+      HomeserverDomainName: "{{ .Values.synapse.homeserverConfig.server_name }}"
+
+      # HomeserverApiEndpoint hack: templating dose not work for json output if the template contains "". As a fix the service name is set as env. And then replaced by the entrypoint 
+      HomeserverApiEndpoint: __HOMESERVER_API_ENDPOINT__  # get replaced by the entrypoint to 'http://{{ include "synapse.basename" . }}'
+      AuthSharedSecret: __AUTH_SHARED_SECRET__  # get replaced by the entrypoint
+      RegistrationSharedSecret: __REGISTRATION_SHARED_SECRET__  # get replaced by the entrypoint
+      TimeoutMilliseconds: 45000
+
+    Corporal:
+      UserId: "@corporal:{{ .Values.synapse.homeserverConfig.server_name }}"
+
+    Reconciliation:
+      RetryIntervalMilliseconds: 30000
+
+    HttpGateway:
+      ListenAddress: 0.0.0.0:41080
+      TimeoutMilliseconds: 60000
+      InternalRESTAuth:
+        Enabled: false
+
+    HttpApi:
+      Enabled: true
+      ListenAddress: 0.0.0.0:41081
+      AuthorizationBearerToken: __AUTHORIZATION_BEARER_TOKEN__ # get replaced by the entrypoint
+      TimeoutMilliseconds: 15000
+
+    PolicyProvider:
+      Type: last_seen_store_policy
+      CachePath: /data/policy.json
+
+    Misc:
+      Debug: false
+
+  deployment:
+    imagePullSecrets: []
+    image:
+      repository: devture/matrix-corporal
+      tag: 2.7.0
+    resources: {}
+
+  ingress:
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    enabled: true
+
+  secrets:
+    existingSecret:
+    shared_secret:
+    authorization_bearer_token:
+
+  pvc:
+    enabled: true
+    accessMode: ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Mi
+    storageClassName:
+
+debug:
+  diagnoseMode:
+    synapse:
+      enabled: false
+      command:
+        - tail
+        - -f
+        - /dev/null
+    element:
+      enabled: false
+      command:
+        - tail
+        - -f
+        - /dev/null
+    wellknown:
+      enabled: false
+      command:
+        - tail
+        - -f
+        - /dev/null
+    corporal:
+      enabled: false
+      command:
+        - tail
+        - -f
+        - /dev/null
+  securityContext:
+    synapse:
+      enabled: true
+    element:
+      enabled: true
+    wellknown:
+      enabled: true
+    corporal:
+      enabled: true

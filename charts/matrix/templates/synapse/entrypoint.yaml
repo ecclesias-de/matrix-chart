@@ -1,0 +1,11 @@
+{{- if .Values.synapse.inject_entrypoint }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: entrypoint-{{ include "synapse.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "synapse.labels" . | nindent 4 }}
+data:
+  entrypoint.py: |
+    {{- .Files.Get "files/entrypoint.py" | nindent 4 }}
+{{- end }}

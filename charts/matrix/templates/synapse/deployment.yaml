@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "synapse.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "synapse.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "synapse.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "synapse.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/synapse/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/synapse/secret.yaml") . | sha256sum }}
+        {{- if .Values.synapse.inject_entrypoint }}
+        checksum/entrypoint: {{ include (print $.Template.BasePath "/synapse/entrypoint.yaml") . | sha256sum }}
+        {{- end }}
+    spec:
+      securityContext:
+        runAsUser: 991
+        runAsGroup: 991
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.synapse.deployment.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.synapse.deployment.imagePullSecrets}}
+      - {{ toYaml . }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: synapse
+        image: {{ .Values.synapse.deployment.image.repository }}:{{ .Values.synapse.deployment.image.tag }}
+        imagePullPolicy: IfNotPresent
+        {{- if .Values.debug.diagnoseMode.synapse.enabled }}
+        command: {{- toYaml .Values.debug.diagnoseMode.synapse.command  | nindent 12 }}
+        {{- else }}
+        command:
+          - /usr/local/bin/python
+          - /entrypoint.py
+        {{- end }}
+        {{- if .Values.synapse.deployment.resources }}
+        resources: {{- toYaml .Values.synapse.deployment.resources | nindent 12 }}
+        {{- end }}
+        ports:
+        - name: matrix
+          containerPort: 8009
+        - name: metrics
+          containerPort: 9000
+        {{- if .Values.debug.securityContext.synapse.enabled }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        {{- end }}
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: config
+          mountPath: /etc/synapse/homeserver.yaml
+          subPath: homeserver.yaml
+          readOnly: true
+        - name: config
+          mountPath: /etc/synapse/log.yaml
+          subPath: log.yaml
+          readOnly: true
+        - name: secret
+          mountPath: /etc/synapse/signing.key
+          subPath: signing.key
+          readOnly: true
+        - name: secret
+          mountPath: /etc/synapse/registration_shared_secret
+          subPath: registration_shared_secret
+          readOnly: true 
+        - name: secret
+          mountPath: /etc/synapse/macaroon_secret_key
+          subPath: macaroon_secret_key
+          readOnly: true 
+        - name: secret  
+          mountPath: /etc/synapse/form_secret
+          subPath: form_secret
+          readOnly: true
+        {{- if .Values.synapse.inject_entrypoint }}
+        - name: entrypoint  
+          mountPath: /entrypoint.py
+          subPath: entrypoint.py
+          readOnly: true
+        {{- end }}
+        {{- if .Values.corporal.enabled }}
+        - name: corporal  
+          mountPath: /etc/synapse/shared_secret_authenticator_secret
+          subPath: shared_secret
+          readOnly: true
+        {{- end}}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+            claimName: {{ template "synapse.pvc" . }}
+      - name: config
+        configMap:
+          name: {{ template "synapse.basename" . }}
+      - name: secret
+        secret:
+          secretName: {{ template "synapse.secret" . }}
+      {{- if .Values.synapse.inject_entrypoint }}
+      - name: entrypoint
+        configMap:
+          name: entrypoint-{{ template "synapse.basename" . }}
+      {{- end }}
+      {{- if .Values.corporal.enabled }}
+      - name: corporal
+        secret:
+          secretName: {{ template "corporal.secret" . }}
+      {{- end }}

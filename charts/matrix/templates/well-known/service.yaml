@@ -1,0 +1,16 @@
+{{- if .Values.wellknown.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "wellknown.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+  selector: {{- include "matchLabels" . | nindent 4 }}
+{{- end }}
