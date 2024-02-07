@@ -6,6 +6,8 @@ metadata:
   labels: {{- include "synapse.labels" . | nindent 4 }}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels: {{- include "synapse.matchLabels" . | nindent 6 }}
   template:
@@ -57,6 +59,14 @@ spec:
           capabilities:
             drop: [ALL]
         {{- end }}
+        {{- if .Values.synapse.secrets.databaseSecret }}
+        env:
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.synapse.secrets.databaseSecret }}
+              key: username
+        {{- end }}
         volumeMounts:
         - name: data
           mountPath: /data
@@ -84,6 +94,12 @@ spec:
           mountPath: /etc/synapse/form_secret
           subPath: form_secret
           readOnly: true
+        {{- if .Values.synapse.secrets.databaseSecret }}
+        - name: database  
+          mountPath: /etc/synapse/database_password
+          subPath: password
+          readOnly: true
+        {{- end }}
         {{- if .Values.synapse.inject_entrypoint }}
         - name: entrypoint  
           mountPath: /entrypoint.py
@@ -106,6 +122,11 @@ spec:
       - name: secret
         secret:
           secretName: {{ template "synapse.secret" . }}
+      {{- if .Values.synapse.secrets.databaseSecret }}
+      - name: database
+        secret:
+          secretName: {{ .Values.synapse.secrets.databaseSecret }}
+      {{- end }}
       {{- if .Values.synapse.inject_entrypoint }}
       - name: entrypoint
         configMap:

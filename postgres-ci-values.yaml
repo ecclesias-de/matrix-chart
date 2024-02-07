@@ -1,0 +1,9 @@
+postgresql:
+  image:
+  tag: 16.1.0-debian-11-r26
+  
+  auth:
+    username: synapse
+    database: ""
+    persistence:
+      size: 1Gi

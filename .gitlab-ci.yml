@@ -1,0 +1,79 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+stages:
+  - package
+  - test
+
+package-matrix-chart:
+  stage: package
+  image: alpine/k8s:1.25.15
+  before_script:
+    - helm registry login "${CI_REGISTRY}" -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}"
+  script:
+    - export CHART_VERSION=$(echo "${CI_COMMIT_TAG:-matrix-0.0.0+${CI_COMMIT_SHORT_SHA}}" | cut -b 8-)
+    - yq e -i '.version = (strenv(CHART_VERSION))' ./charts/matrix/Chart.yaml
+    - helm package -d build/ -u ./charts/matrix
+    - helm push build/*-${CHART_VERSION}.tgz "oci://${CI_REGISTRY_IMAGE}/charts"
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^matrix-.*/
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+package-sygnal-chart:
+  stage: package
+  image: alpine/k8s:1.25.15
+  before_script:
+    - helm registry login "${CI_REGISTRY}" -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}"
+  script:
+    - export CHART_VERSION=$(echo "${CI_COMMIT_TAG:-sygnal-0.0.0+${CI_COMMIT_SHORT_SHA}}" | cut -b 8-)
+    - yq e -i '.version = (strenv(CHART_VERSION))' ./charts/sygnal/Chart.yaml
+    - helm package -d build/ -u ./charts/sygnal
+    - helm push build/*-${CHART_VERSION}.tgz "oci://${CI_REGISTRY_IMAGE}/charts"
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^sygnal-.*/
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test-deploy:
+  stage: test
+  image: alpine/k8s:1.25.15
+  environment:
+    name: test-$CI_COMMIT_REF_SLUG
+    url: https://element.$CI_COMMIT_REF_SLUG.$TEST_DEPLOY_BASE_DOMAIN
+    deployment_tier: development
+    on_stop: test-deploy-teardown
+  variables:
+    DEPLOYMENT_NAME: $CI_COMMIT_REF_SLUG
+  before_script:
+    - helm registry login "${CI_REGISTRY}" -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}"
+    - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+    - helm repo add dex https://charts.dexidp.io
+    - kubectl config use-context $TEST_DEPLOY_AGENT_CONTEXT
+    - task test-deploy:dex
+    - task test-deploy:postgres
+  script:
+    - CHART="oci://${CI_REGISTRY_IMAGE}/charts/sygnal --version 0.0.0+${CI_COMMIT_SHORT_SHA}" task test-deploy:sygnal
+    - CHART="oci://${CI_REGISTRY_IMAGE}/charts/matrix --version 0.0.0+${CI_COMMIT_SHORT_SHA}" task test-deploy:matrix
+    - task test-deploy:init-corporal-policy || (sleep 30; task test-deploy:init-corporal-policy)
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test-deploy-teardown:
+  stage: test
+  image: alpine/k8s:1.25.15
+  environment:
+    name: test-$CI_COMMIT_REF_SLUG
+    action: stop
+  variables:
+    DEPLOYMENT_NAME: $CI_COMMIT_REF_SLUG
+  before_script:
+    - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+    - kubectl config use-context $TEST_DEPLOY_AGENT_CONTEXT
+  script:
+    - task test-deploy:teardown
+  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"

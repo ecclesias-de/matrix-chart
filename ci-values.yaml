@@ -1,0 +1,71 @@
+synapse:
+  homeserverConfig:
+    database:
+      name: psycopg2
+      txn_limit: 10000
+      args:
+        dbname: synapse
+        port: 5432
+    enable_registration: true
+    enable_registration_without_verification: true
+
+    # document that this is needed for matrix corporal or inject everything inside the entrypoint
+    modules:
+    - module: shared_secret_authenticator.SharedSecretAuthProvider
+      config:
+        m_login_password_support_enabled: true
+        # shared_secret: is injected by the entrypoint
+
+    oidc_providers:
+    - idp_id: dex
+      idp_name: "My Dex server"
+      issuer: "https://{{ .Values.oauth.issuer }}"
+      client_id: "synapse"
+      client_secret: "{{ .Values.oauth.secret }}"
+      scopes: ["openid", "profile"]
+      user_mapping_provider:
+        config:
+          localpart_template: '{{ "{{" }} user.name {{ "}}" }}'
+          display_name_template: '{{ "{{" }} user.name|capitalize {{ "}}" }}'
+      # important: allows existing user to use oauth without manually changing the external id
+      allow_existing_users: true
+
+    sso:
+      client_whitelist:
+        - https://{{ .Values.element.ingress.hostname }}/
+    update_profile_information: true
+
+  logConfig:
+    loggers:
+      shared_secret_authenticator:
+        level: INFO
+
+  deployment:
+    image:
+      repository: dockerregistry.metaways.net/ebhh/element-build/synapse
+      tag: d1
+
+element:
+  config:
+    sso_redirect_options:
+      immediate: true
+
+debug:
+  diagnoseMode:
+    synapse:
+      enabled: false
+    element:
+      enabled: false
+    wellknown:
+      enabled: false
+    corporal:
+      enabled: false
+  securityContext:
+    synapse:
+      enabled: true
+    element:
+      enabled: true
+    wellknown:
+      enabled: true
+    corporal:
+      enabled: true
