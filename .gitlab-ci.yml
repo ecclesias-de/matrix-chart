@@ -20,6 +20,7 @@ package-matrix-chart:
     - helm push build/*-${CHART_VERSION}.tgz "oci://${CI_REGISTRY_IMAGE}/charts"
   rules:
     - if: $CI_COMMIT_TAG =~ /^matrix-.*/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 package-sygnal-chart:
@@ -34,6 +35,7 @@ package-sygnal-chart:
     - helm push build/*-${CHART_VERSION}.tgz "oci://${CI_REGISTRY_IMAGE}/charts"
   rules:
     - if: $CI_COMMIT_TAG =~ /^sygnal-.*/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 test-deploy:
