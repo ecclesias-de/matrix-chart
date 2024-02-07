@@ -6,9 +6,9 @@ with open("/etc/synapse/homeserver.yaml") as f:
     config = yaml.safe_load(f)
 
 if config["database"]["name"] == "psycopg2":
-    config["database"]["args"]["host"] = os.environ["DATABASE_HOST"]
-    config["database"]["args"]["port"] = os.environ["DATABASE_PORT"]
-    config["database"]["args"]["dbname"] = os.environ["DATABASE_NAME"]
+    # config["database"]["args"]["host"] = os.environ["DATABASE_HOST"]
+    # config["database"]["args"]["port"] = os.environ["DATABASE_PORT"]
+    # config["database"]["args"]["dbname"] = os.environ["DATABASE_NAME"]
     config["database"]["args"]["user"] = os.environ["DATABASE_USER"]
 
     with open("/etc/synapse/database_password") as f:

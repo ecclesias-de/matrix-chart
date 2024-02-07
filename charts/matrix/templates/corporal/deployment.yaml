@@ -7,6 +7,8 @@ metadata:
   labels: {{- include "corporal.labels" . | nindent 4 }}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels: {{- include "corporal.matchLabels" . | nindent 6 }}
   template:

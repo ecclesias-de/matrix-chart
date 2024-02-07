@@ -1,0 +1,36 @@
+https:
+  enabled: false
+
+config:
+  storage:
+    type: memory
+
+  logger:
+    level: "debug"
+
+  connectors:
+  - type: mockCallback
+    id: mock
+    name: Example
+
+  enablePasswordDB: true
+
+  staticPasswords:
+  - email: "dex1@example.com"
+    # bcrypt hash of the string "password": $(echo password | htpasswd -BinC 10 admin | cut -d: -f2)
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: "dex1"
+    userID: "11111"
+  - email: "dex2@example.com"
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: "dex2"
+    userID: "22222"
+  - email: "dex3@example.com"
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: "dex3"
+    userID: "33333"
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/tls-acme: "true"

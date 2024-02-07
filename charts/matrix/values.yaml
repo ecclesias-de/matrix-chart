@@ -20,9 +20,9 @@ synapse:
       args:
         # user: set by entrypoint.py
         # password: set by entrypoint.py
-        # dbname: set by entrypoint.py
-        # host: set by entrypoint.py
-        # port: set by entrypoint.py
+        dbname: # required for postgres
+        host: # required for postgres
+        port: # required for postgres
         cp_min: 5
         cp_max: 10
     log_config: /etc/synapse/log.yaml
@@ -75,6 +75,7 @@ synapse:
   inject_entrypoint: true
 
   secrets:
+    databaseSecret:
     existingSecret:
     registration_shared_secret: ""
     signing_key: ""

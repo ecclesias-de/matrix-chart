@@ -2,3 +2,5 @@
 /dex-values.yaml
 /tine-dev-values.yaml
 /sygnal-dev-values.yaml
+/.task
+/charts/postgres/charts
