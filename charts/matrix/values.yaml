@@ -22,7 +22,7 @@ synapse:
         # password: set by entrypoint.py
         dbname: # required for postgres
         host: # required for postgres
-        port: # required for postgres
+        port: 5432
         cp_min: 5
         cp_max: 10
     log_config: /etc/synapse/log.yaml
@@ -75,12 +75,15 @@ synapse:
   inject_entrypoint: true
 
   secrets:
-    databaseSecret:
     existingSecret:
     registration_shared_secret: ""
     signing_key: ""
     macaroon_secret_key: ""
     form_secret: ""
+
+  database:
+    secret:
+    configmap:
 
   pvc:
     accessMode: ReadWriteOnce

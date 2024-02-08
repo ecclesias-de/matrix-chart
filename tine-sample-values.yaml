@@ -38,7 +38,7 @@ element:
       # We do not want to use an identity server at all. We want users to be able to choose to use vector im. All lookout should already be served by the directory endpoint.
       # todo what server do we want to use here
       m.identity_server:
-        base_url: https://sydent.ebhh-test.k8s.mmertens.metaways.me
+        base_url: https://sydent.example.com
     # login mask should redirect to tine immediately 
     sso_redirect_options:
       immediate: true

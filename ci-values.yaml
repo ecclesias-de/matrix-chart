@@ -5,7 +5,6 @@ synapse:
       txn_limit: 10000
       args:
         dbname: synapse
-        port: 5432
     enable_registration: true
     enable_registration_without_verification: true
 

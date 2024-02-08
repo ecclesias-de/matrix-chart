@@ -59,13 +59,20 @@ spec:
           capabilities:
             drop: [ALL]
         {{- end }}
-        {{- if .Values.synapse.secrets.databaseSecret }}
         env:
+        {{- if .Values.synapse.database.secret }}
         - name: DATABASE_USER
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.synapse.secrets.databaseSecret }}
+              name: {{ .Values.synapse.database.secret }}
               key: username
+        {{- end }}
+         {{- if .Values.synapse.database.configmap }}
+        - name: DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.synapse.database.configmap }}
+              key: HOST
         {{- end }}
         volumeMounts:
         - name: data
@@ -94,7 +101,7 @@ spec:
           mountPath: /etc/synapse/form_secret
           subPath: form_secret
           readOnly: true
-        {{- if .Values.synapse.secrets.databaseSecret }}
+        {{- if .Values.synapse.database.secret }}
         - name: database  
           mountPath: /etc/synapse/database_password
           subPath: password
@@ -122,10 +129,10 @@ spec:
       - name: secret
         secret:
           secretName: {{ template "synapse.secret" . }}
-      {{- if .Values.synapse.secrets.databaseSecret }}
+      {{- if .Values.synapse.database.secret }}
       - name: database
         secret:
-          secretName: {{ .Values.synapse.secrets.databaseSecret }}
+          secretName: {{ .Values.synapse.database.secret }}
       {{- end }}
       {{- if .Values.synapse.inject_entrypoint }}
       - name: entrypoint

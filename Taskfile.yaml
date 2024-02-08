@@ -27,7 +27,8 @@ tasks:
         --set synapse.homeserverConfig.server_name={{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
         --set synapse.homeserverConfig.database.args.host=postgres-{{.DEPLOYMENT_NAME}}-postgresql
         --set synapse.ingress.hostname=matrix.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
-        --set synapse.secrets.databaseSecret=postgres-{{.DEPLOYMENT_NAME}}
+        --set synapse.database.secret=postgres-{{.DEPLOYMENT_NAME}}
+        --set synapse.database.configmap=postgres-{{.DEPLOYMENT_NAME}}
         --set synapse.secrets.registration_shared_secret={{.REGISTRATION_SHARED_SECRET}}
         --set synapse.secrets.macaroon_secret_key={{.MACAROON_SECRET_KEY}}
         --set synapse.secrets.form_secret={{.FORM_SECRET}}
@@ -67,6 +68,11 @@ tasks:
         --from-literal password={{.DB_PASSWORD}}
         --from-literal postgres-password={{.DB_POSTGRES_PASSWORD}}
         --from-literal username=synapse
+        --dry-run=client -o yaml | kubectl apply -f -
+      - >
+        kubectl create configmap postgres-{{.DEPLOYMENT_NAME}}
+        -n {{.NAMESPACE}}
+        --from-literal HOST=postgres-{{.DEPLOYMENT_NAME}}-postgresql
         --dry-run=client -o yaml | kubectl apply -f -
       - helm dependency build --skip-refresh ./charts/postgres 
       - >
