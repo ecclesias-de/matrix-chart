@@ -11,9 +11,9 @@ synapse:
       user_profile_method: "userinfo_endpoint"
       user_mapping_provider:
         config:
-          localpart_template: "{{ user.preferred_username }}"
-          display_name_template: "{{ user.name }}"
-          email_template: "{{ user.email }}"
+          localpart_template: '{{ "{{" }} user.preferred_username {{ "}}" }}'
+          display_name_template: '{{ "{{" }} user.name {{ "}}" }}'
+          email_template: '{{ "{{" }} user.email  {{ "}}" }}'
        # important: allows existing user to use oauth without manually changing the external id. Matrix-corporal creates the users if they do not exist, before they create them self.
       allow_existing_users: true
 
