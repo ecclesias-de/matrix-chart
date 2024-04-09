@@ -55,6 +55,7 @@ test-deploy:
     - kubectl config use-context $TEST_DEPLOY_AGENT_CONTEXT
     - task test-deploy:dex
     - task test-deploy:postgres
+    - task test-deploy:redis
   script:
     - CHART="oci://${CI_REGISTRY_IMAGE}/charts/sygnal --version 0.0.0+${CI_COMMIT_SHORT_SHA}" task test-deploy:sygnal
     - CHART="oci://${CI_REGISTRY_IMAGE}/charts/matrix --version 0.0.0+${CI_COMMIT_SHORT_SHA}" task test-deploy:matrix

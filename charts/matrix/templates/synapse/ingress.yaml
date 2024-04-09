@@ -7,12 +7,23 @@ metadata:
   labels: {{- include "synapse.labels" . | nindent 4 }}
   {{- if .Values.synapse.ingress.annotations }}
   annotations: {{ .Values.synapse.ingress.annotations | toYaml | nindent 4 }}
+    nginx.ingress.kubernetes.io/use-regex: "true"
   {{- end }}
 spec:
   rules:
     - host: {{ .Values.synapse.ingress.hostname }}
       http:
         paths:
+          {{- $global := . }}
+          {{- range $endpoint := .Values.synapseEndpoints.generic }}
+          - path: {{ $endpoint }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "synapse.basename" $global }}-generic
+                port:
+                  number: 80
+          {{- end }}
           - path: /_matrix/
             pathType: Prefix
             backend:

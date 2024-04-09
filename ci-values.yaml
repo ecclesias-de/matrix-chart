@@ -1,10 +1,13 @@
 synapse:
-  homeserverConfig:
+  homeserverConfig:    
     database:
       name: psycopg2
       txn_limit: 10000
       args:
         dbname: synapse
+    redis:
+      dbid: 0
+
     enable_registration: true
     enable_registration_without_verification: true
 
@@ -34,6 +37,9 @@ synapse:
         - https://{{ .Values.element.ingress.hostname }}/
     update_profile_information: true
 
+  pvc:
+    storageClassName: csi-cephfs-sc
+
   logConfig:
     loggers:
       shared_secret_authenticator:
@@ -43,6 +49,9 @@ synapse:
     image:
       repository: dockerregistry.metaways.net/ebhh/element-build/synapse
       tag: d1
+
+  pvc:
+    storageClassName: csi-cephfs-sc
 
 element:
   config:

@@ -11,6 +11,10 @@ synapse:
         resources:
           - names: [client, federation, static]
             compress: false
+      - port: 8093
+        type: http
+        resources:
+        - names: [replication]
       - port: 9000
         tag: metrics
         type: metrics
@@ -25,6 +29,15 @@ synapse:
         port: 5432
         cp_min: 5
         cp_max: 10
+    redis:
+      enabled: true
+      port: 6379
+      #host: set by entrypoint.py
+      #password: set by entrypoint.py
+    instance_map:
+      main:
+        host: '{{ include "synapse.basename" . }}'
+        port: 8093
     log_config: /etc/synapse/log.yaml
     media_store_path: /data/media_store
     registration_shared_secret_path: /etc/synapse/registration_shared_secret
@@ -34,6 +47,22 @@ synapse:
     signing_key_path: "/etc/synapse/signing.key"
     trusted_key_servers:
       - server_name: "matrix.org"
+
+  workerConfig:
+    worker_app: synapse.app.generic_worker
+    # worker_name: gets set to hostname by the entrypoint, if empty
+
+    worker_listeners:
+      - type: http
+        port: 8009
+        x_forwarded: true
+        resources:
+          - names: [client, federation]
+
+    worker_log_config: /etc/synapse/log.yaml
+
+  worker:
+    enabled: true
 
   # values inside these config are rended by the templating engin. See readme for usage and caveats.
   logConfig:
@@ -85,8 +114,12 @@ synapse:
     secret:
     configmap:
 
+  redis:
+    secret:
+    configmap:
+
   pvc:
-    accessMode: ReadWriteOnce
+    accessMode: ReadWriteMany
     resources:
       requests:
         storage: 2Gi
@@ -209,6 +242,12 @@ debug:
         - tail
         - -f
         - /dev/null
+    synapseWorker:
+      enabled: false
+      command:
+        - tail
+        - -f
+        - /dev/null
     element:
       enabled: false
       command:
@@ -236,3 +275,99 @@ debug:
       enabled: true
     corporal:
       enabled: true
+
+# synapse nginx locations regex
+# locations need to start with an / nginx will prepend and ^
+synapseEndpoints:
+  generic:
+    # Sync requests
+    - /_matrix/client/(r0|v3)/sync$
+    - /_matrix/client/(api/v1|r0|v3)/events$
+    - /_matrix/client/(api/v1|r0|v3)/initialSync$
+    - /_matrix/client/(api/v1|r0|v3)/rooms/[^/]+/initialSync$
+
+    # Federation requests
+    - /_matrix/federation/v1/event/
+    - /_matrix/federation/v1/state/
+    - /_matrix/federation/v1/state_ids/
+    - /_matrix/federation/v1/backfill/
+    - /_matrix/federation/v1/get_missing_events/
+    - /_matrix/federation/v1/publicRooms
+    - /_matrix/federation/v1/query/
+    - /_matrix/federation/v1/make_join/
+    - /_matrix/federation/v1/make_leave/
+    - /_matrix/federation/(v1|v2)/send_join/
+    - /_matrix/federation/(v1|v2)/send_leave/
+    - /_matrix/federation/(v1|v2)/invite/
+    - /_matrix/federation/v1/event_auth/
+    - /_matrix/federation/v1/timestamp_to_event/
+    - /_matrix/federation/v1/exchange_third_party_invite/
+    - /_matrix/federation/v1/user/devices/
+    - /_matrix/key/v2/query
+    - /_matrix/federation/v1/hierarchy/
+
+    # Inbound federation transaction request
+    - /_matrix/federation/v1/send/
+
+    # Client API requests
+    - /_matrix/client/(api/v1|r0|v3|unstable)/createRoom$
+    - /_matrix/client/(api/v1|r0|v3|unstable)/publicRooms$
+    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/joined_members$
+    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/context/.*$
+    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/members$
+    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/state$
+    - /_matrix/client/v1/rooms/.*/hierarchy$
+    - /_matrix/client/(v1|unstable)/rooms/.*/relations/
+    - /_matrix/client/v1/rooms/.*/threads$
+    - /_matrix/client/unstable/im.nheko.summary/rooms/.*/summary$
+    - /_matrix/client/(r0|v3|unstable)/account/3pid$
+    - /_matrix/client/(r0|v3|unstable)/account/whoami$
+    - /_matrix/client/(r0|v3|unstable)/devices$
+    - /_matrix/client/versions$
+    - /_matrix/client/(api/v1|r0|v3|unstable)/voip/turnServer$
+    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/event/
+    - /_matrix/client/(api/v1|r0|v3|unstable)/joined_rooms$
+    - /_matrix/client/v1/rooms/.*/timestamp_to_event$
+    - /_matrix/client/(api/v1|r0|v3|unstable/.*)/rooms/.*/aliases
+    - /_matrix/client/(api/v1|r0|v3|unstable)/search$
+    - /_matrix/client/(r0|v3|unstable)/user/.*/filter(/|$)
+    - /_matrix/client/(api/v1|r0|v3|unstable)/directory/room/.*$
+    - /_matrix/client/(r0|v3|unstable)/capabilities$
+    - /_matrix/client/(r0|v3|unstable)/notifications$
+
+    # Encryption requests
+    - /_matrix/client/(r0|v3|unstable)/keys/query$
+    - /_matrix/client/(r0|v3|unstable)/keys/changes$
+    - /_matrix/client/(r0|v3|unstable)/keys/claim$
+    - /_matrix/client/(r0|v3|unstable)/room_keys/
+    - /_matrix/client/(r0|v3|unstable)/keys/upload/
+
+    # Registration/login requests
+    - /_matrix/client/(api/v1|r0|v3|unstable)/login$
+    - /_matrix/client/(r0|v3|unstable)/register$
+    - /_matrix/client/(r0|v3|unstable)/register/available$
+    - /_matrix/client/v1/register/m.login.registration_token/validity$
+    - /_matrix/client/(r0|v3|unstable)/password_policy$
+
+    # Event sending requests
+    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/redact
+    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/send
+    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/state/
+    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/(join|invite|leave|ban|unban|kick)$
+    - /_matrix/client/(api/v1|r0|v3|unstable)/join/
+    - /_matrix/client/(api/v1|r0|v3|unstable)/knock/
+    - /_matrix/client/(api/v1|r0|v3|unstable)/profile/
+
+    # Account data requests
+    - /_matrix/client/(r0|v3|unstable)/.*/tags
+    - /_matrix/client/(r0|v3|unstable)/.*/account_data
+
+    # Receipts requests
+    - /_matrix/client/(r0|v3|unstable)/rooms/.*/receipt
+    - /_matrix/client/(r0|v3|unstable)/rooms/.*/read_markers
+
+    # Presence requests
+    - /_matrix/client/(api/v1|r0|v3|unstable)/presence/
+
+    # User directory search requests
+    - /_matrix/client/(r0|v3|unstable)/user_directory/search$

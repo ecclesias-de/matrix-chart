@@ -1,19 +1,18 @@
+{{- if .Values.synapse.worker.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "synapse.basename" . }}
+  name: {{ template "synapse-worker.basename" . }}
   namespace: {{ .Release.Namespace | quote }}
-  labels: {{- include "synapse.labels" . | nindent 4 }}
+  labels: {{- include "synapse-worker.labels" . | nindent 4 }}
     synapse-endpoints: generic
 spec:
-  replicas: 1
-  strategy:
-    type: Recreate
+  replicas: 1 # can be scaled
   selector:
-    matchLabels: {{- include "synapse.matchLabels" . | nindent 6 }}
+    matchLabels: {{- include "synapse-worker.matchLabels" . | nindent 6 }}
   template:
     metadata:
-      labels: {{- include "synapse.labels" . | nindent 8 }}
+      labels: {{- include "synapse-worker.labels" . | nindent 8 }}
         synapse-endpoints: generic
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/synapse/configmap.yaml") . | sha256sum }}
@@ -38,12 +37,13 @@ spec:
       - name: synapse
         image: {{ .Values.synapse.deployment.image.repository }}:{{ .Values.synapse.deployment.image.tag }}
         imagePullPolicy: IfNotPresent
-        {{- if .Values.debug.diagnoseMode.synapse.enabled }}
-        command: {{- toYaml .Values.debug.diagnoseMode.synapse.command  | nindent 12 }}
+        {{- if .Values.debug.diagnoseMode.synapseWorker.enabled }}
+        command: {{- toYaml .Values.debug.diagnoseMode.synapseWorker.command  | nindent 12 }}
         {{- else }}
         command:
           - /usr/local/bin/python
           - /entrypoint.py
+          - worker
         {{- end }}
         {{- if .Values.synapse.deployment.resources }}
         resources: {{- toYaml .Values.synapse.deployment.resources | nindent 12 }}
@@ -71,7 +71,7 @@ spec:
               name: {{ .Values.synapse.database.secret }}
               key: username
         {{- end }}
-        {{- if .Values.synapse.database.configmap }}
+         {{- if .Values.synapse.database.configmap }}
         - name: DATABASE_HOST
           valueFrom:
             configMapKeyRef:
@@ -91,7 +91,7 @@ spec:
         - name: config
           mountPath: /etc/synapse/homeserver.yaml
           subPath: homeserver.yaml
-          readOnly: 
+          readOnly: true
         - name: config
           mountPath: /etc/synapse/worker.yaml
           subPath: worker.yaml
@@ -160,13 +160,12 @@ spec:
         secret:
           secretName: {{ .Values.synapse.redis.secret }}
       {{- end }}
-      {{- if .Values.synapse.inject_entrypoint }}
       - name: entrypoint
         configMap:
           name: entrypoint-{{ template "synapse.basename" . }}
-      {{- end }}
       {{- if .Values.corporal.enabled }}
       - name: corporal
         secret:
           secretName: {{ template "corporal.secret" . }}
       {{- end }}
+{{- end }}

@@ -10,3 +10,6 @@ data:
 
   log.yaml: |
     {{- tpl ( .Values.synapse.logConfig | toYaml ) . | nindent 4 }}
+
+  worker.yaml: |
+    {{- tpl ( .Values.synapse.workerConfig | toYaml ) . | nindent 4 }}

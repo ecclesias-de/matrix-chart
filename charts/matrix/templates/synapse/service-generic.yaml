@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "synapse.basename" . }}
+  name: {{ include "synapse.basename" . }}-generic
   namespace: {{ .Release.Namespace | quote }}
   labels: {{- include "synapse.labels" . | nindent 4 }}
 spec:
@@ -11,8 +11,5 @@ spec:
       port: 80
       protocol: TCP
       targetPort: matrix
-    - name: replication
-      port: 8093
-      protocol: TCP
-      targetPort: replication
-  selector: {{- include "synapse.matchLabels" . | nindent 4 }}
+  selector: {{- include "matchLabels" . | nindent 4 }}
+    synapse-endpoints: generic

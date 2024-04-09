@@ -29,6 +29,7 @@ tasks:
         --set synapse.ingress.hostname=matrix.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
         --set synapse.database.secret=postgres-{{.DEPLOYMENT_NAME}}
         --set synapse.database.configmap=postgres-{{.DEPLOYMENT_NAME}}
+        --set synapse.redis.configmap=redis.connection-{{.DEPLOYMENT_NAME}}
         --set synapse.secrets.registration_shared_secret={{.REGISTRATION_SHARED_SECRET}}
         --set synapse.secrets.macaroon_secret_key={{.MACAROON_SECRET_KEY}}
         --set synapse.secrets.form_secret={{.FORM_SECRET}}
@@ -81,14 +82,28 @@ tasks:
         --values postgres-ci-values.yaml
         --set postgresql.auth.existingSecret=postgres-{{.DEPLOYMENT_NAME}}
 
+  test-deploy:redis:
+    cmds:
+      - >
+        helm upgrade --install -n {{.NAMESPACE}} redis-{{.DEPLOYMENT_NAME}} oci://registry-1.docker.io/bitnamicharts/redis
+        --set auth.enabled=false
+        --set architecture=standalone
+      - >
+        kubectl create configmap redis.connection-{{.DEPLOYMENT_NAME}}
+        --from-literal REDIS_HOST=redis-{{.DEPLOYMENT_NAME}}-master
+        --dry-run=client -o yaml | kubectl apply -f -
+
   test-deploy:teardown:
     cmds:
       - helm uninstall -n {{.NAMESPACE}} matrix-{{.DEPLOYMENT_NAME}} --wait --ignore-not-found
       - helm uninstall -n {{.NAMESPACE}} sygnal-{{.DEPLOYMENT_NAME}} --wait --ignore-not-found
       - helm uninstall -n {{.NAMESPACE}} dex-{{.DEPLOYMENT_NAME}} --wait --ignore-not-found
       - helm uninstall -n {{.NAMESPACE}} postgres-{{.DEPLOYMENT_NAME}} --wait
+      - helm uninstall -n {{.NAMESPACE}} redis-{{.DEPLOYMENT_NAME}} --wait
       - kubectl delete -n {{.NAMESPACE}} secret postgres-{{.DEPLOYMENT_NAME}}
       - kubectl delete -n {{.NAMESPACE}} pvc data-postgres-{{.DEPLOYMENT_NAME}}-postgresql-0
+      - kubectl delete -n {{.NAMESPACE}} configmap redis.connection-{{.DEPLOYMENT_NAME}}
+      - kubectl delete -n {{.NAMESPACE}} pvc redis-data-redis-{{.DEPLOYMENT_NAME}}-master-0
 
   test-deploy:init-corporal-policy:
     cmds:
