@@ -53,16 +53,9 @@ synapse:
   pvc:
     storageClassName: csi-cephfs-sc
 
-element:
-  config:
-    sso_redirect_options:
-      immediate: true
-
 debug:
   diagnoseMode:
     synapse:
-      enabled: false
-    element:
       enabled: false
     wellknown:
       enabled: false
@@ -70,8 +63,6 @@ debug:
       enabled: false
   securityContext:
     synapse:
-      enabled: true
-    element:
       enabled: true
     wellknown:
       enabled: true

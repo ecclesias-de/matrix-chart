@@ -126,26 +126,6 @@ synapse:
     storageClassName:
     existingPvc:
 
-element:
-  # values inside these config are rended by the templating engin. See readme for usage and caveats.
-  config:
-    default_server_config:
-      m.homeserver:
-        base_url: "https://{{ .Values.synapse.ingress.hostname }}/"
-
-  deployment:
-    imagePullSecrets: []
-    image:
-      repository: dockerregistry.metaways.net/ebhh/element-build/element
-      tag: 117016
-    resources: {}
-
-  ingress:
-    annotations:
-      kubernetes.io/tls-acme: "true"
-    enabled: true
-    hostname: ""
-
 wellknown:
   enabled: true
 

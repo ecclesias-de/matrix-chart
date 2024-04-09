@@ -40,6 +40,17 @@ tasks:
         --set corporal.secrets.shared_secret={{.SHARED_SECRET}}
         --set corporal.secrets.authorization_bearer_token={{.AUTHORIZATION_BEARER_TOKEN}}
   
+  test-deploy:element:
+    vars:
+      CHART: '{{.CHART | default "./charts/element"}}'
+    cmds:
+      - >
+        helm upgrade --install -n {{.NAMESPACE}} element-{{.DEPLOYMENT_NAME}} {{.CHART}}
+        --wait --atomic
+        --values element-ci-values.yaml 
+        --set element.ingress.hostname=element.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
+        --set synapse.ingress.hostname=matrix.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
+
   test-deploy:sygnal:
     vars:
       CHART: '{{.CHART | default "./charts/sygnal"}}'

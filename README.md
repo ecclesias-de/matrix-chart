@@ -2,7 +2,7 @@
 This repo contains the base charts, for our matrix setup(s).
 
 It is intended to be used as a multi tenant setup. Where each tenant gets is own synapse (homesever) and element (web client).
-All per tenant services are defined inside the matrix chart. Shared servers (e.g. the Push Gateway) get there own chart.
+Shared servers (e.g. the Push Gateway) get there own chart. All per tenant services were/still are defined inside the matrix chart. Element already is in its own chart. They should be split into multiple charts. Thats better for updating production release. As you can be sure to not restart the wrong service accidentally.
 
 Out setup is indented to be used with tine as a data source. These features are provided by tine
 + tine is used as open id provider for sso

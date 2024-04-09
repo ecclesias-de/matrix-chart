@@ -1,0 +1,31 @@
+element:
+  # values inside these config are rended by the templateing engin. See readme for usage and caveats.
+  config:
+    default_server_config:
+      m.homeserver:
+        base_url: "https://{{ .Values.synapse.ingress.hostname }}/"
+
+  deployment:
+    imagePullSecrets: []
+    image:
+      repository: dockerregistry.metaways.net/ebhh/element-build/element
+      tag: 117016
+    resources: {}
+
+  ingress:
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    enabled: true
+    hostname: ""
+
+debug:
+  diagnoseMode:
+    element:
+      enabled: false
+      command:
+        - tail
+        - -f
+        - /dev/null
+  securityContext:
+    element:
+      enabled: true
