@@ -101,6 +101,7 @@ tasks:
         --set architecture=standalone
       - >
         kubectl create configmap redis.connection-{{.DEPLOYMENT_NAME}}
+        -n {{.NAMESPACE}}
         --from-literal REDIS_HOST=redis-{{.DEPLOYMENT_NAME}}-master
         --dry-run=client -o yaml | kubectl apply -f -
 
