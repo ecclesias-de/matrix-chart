@@ -1,6 +1,7 @@
-FROM matrixdotorg/synapse
+ARG SYNAPSE_VERSION
+FROM matrixdotorg/synapse:${SYNAPSE_VERSION}
 
-COPY chart/files/entrypoint.py /entrypoint.py
+COPY charts/matrix/files/entrypoint.py /entrypoint.py
 
 # Use curl instead of pip because using pip would require git
 RUN curl \
