@@ -9,7 +9,7 @@ metadata:
   {{- end }}
 spec:
   rules:
-    - host: {{ .Values.synapse.homeserverConfig.server_name }}
+    - host: {{ .Values.wellknown.ingress.hostname | default .Values.synapse.homeserverConfig.server_name }}
       http:
         paths:
           - backend:
@@ -21,6 +21,6 @@ spec:
             pathType: Prefix
   tls:
     - hosts:
-        - {{ .Values.synapse.homeserverConfig.server_name | quote }}
-      secretName: {{ printf "%s-tls" .Values.synapse.homeserverConfig.server_name }}
+        - {{ .Values.wellknown.ingress.hostname | default .Values.synapse.homeserverConfig.server_name | quote }}
+      secretName: {{ printf "%s-tls" (.Values.wellknown.ingress.hostname | default .Values.synapse.homeserverConfig.server_name) }}
 {{- end }}

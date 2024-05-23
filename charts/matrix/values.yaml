@@ -149,6 +149,8 @@ wellknown:
     annotations:
       kubernetes.io/tls-acme: "true"
     enabled: true
+    # defaults to synapse.config.server_name
+    # hostname:
 
 corporal:
   enabled: true
