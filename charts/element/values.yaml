@@ -8,8 +8,8 @@ element:
   deployment:
     imagePullSecrets: []
     image:
-      repository: dockerregistry.metaways.net/ebhh/element-build/element
-      tag: 117016
+      repository: vectorim/element-web
+      tag: v1.11.52
     resources: {}
 
   ingress:
