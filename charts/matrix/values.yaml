@@ -92,7 +92,7 @@ synapse:
     imagePullSecrets: []
     image:
       repository: matrixdotorg/synapse
-      tag: v1.98.0
+      tag: v1.92.3
     resources: {}
 
   ingress:
