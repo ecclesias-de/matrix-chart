@@ -2,3 +2,8 @@ element:
   config:
     sso_redirect_options:
       immediate: true
+
+  deployment:
+    image:
+      repository: dockerregistry.metaways.net/ebhh/element-build/element
+      tag: "117016"
