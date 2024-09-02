@@ -30,7 +30,8 @@ config:
     username: "dex3"
     userID: "33333"
   - email: "googlereview@main.dev-matrix.ebhh-test.k8s.mmertens.metaways.me"
-    hash: "$2y$10$nUVOx3BO2WZeWsLuZO3Tkuvoy0d8PkLiljYvmm0gmAJwNexFkJ4hK"
+    # $(echo googlereview | htpasswd -BinC 10 admin | cut -d: -f2)
+    hash: "$2y$10$sB8gqSnHgiKpPVXx7//FYeZ56aJGUC3fj8XQw31ixZa3GGSXb7sq2"
     username: "googlereview"
     userID: "44444"
 
