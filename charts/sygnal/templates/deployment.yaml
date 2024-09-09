@@ -68,14 +68,9 @@ spec:
           mountPath: /etc/sygnal/config.yaml
           subPath: config.yaml
           readOnly: true
-        # - name: secret
-        #   mountPath: /etc/sygnal/gcm_api_key
-        #   subPath: gcm_api_key
-        #   readOnly: true
-        # - name: secret
-        #   mountPath: /etc/sygnal/apple_certificate
-        #   subPath: apple_certificate
-        #   readOnly: true 
+        - name: secret
+          mountPath: /etc/sygnal/secrets
+          readOnly: true
         {{- if .Values.inject_entrypoint }}
         - name: entrypoint  
           mountPath: /entrypoint.py
@@ -86,9 +81,9 @@ spec:
       - name: config
         configMap:
           name: {{ template "basename" . }}
-      # - name: secret
-      #   secret:
-      #     secretName: {{ template "secret" . }}
+      - name: secret
+        secret:
+          secretName: {{ template "secret" . }}
       {{- if .Values.inject_entrypoint }}
       - name: entrypoint
         configMap:
