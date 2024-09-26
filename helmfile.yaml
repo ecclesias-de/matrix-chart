@@ -1,0 +1,97 @@
+environments:
+  default:
+    values:
+      - deploymentName: {{ env "DEPLOYMENT_NAME" | default "dev" }}
+        baseDomain: {{ env "BASE_DOMAIN" | default "localhost" }}
+  appreview:
+    values:
+      - deploymentName: appreview
+        baseDomain: matrix.mws-hosting.net
+
+helmDefaults:
+  wait: true
+  waitForJobs: true
+
+repositories:
+  - name: matrix
+    url: dockerregistry.metaways.net/se/matrix-chart/charts
+    oci: true
+
+releases:
+- name: postgres-{{ .Values.deploymentName }}
+  kubeContext: se/agent:ebhh-test
+  namespace: dev-matrix
+  chart: ./charts/postgres
+  values:
+    - mwconnection:
+        password: lGjSRRe14NbhH4IJ9voaweJylZ5nY2qDfaCoPy51wyZwTvzqa0AhqmWpLyunO55u
+        postgresPassword: AqUej8A81ZM8enzif4CZsiqNUIkMwfvZ4jIVtwsj3CD7JBExvKxnvPCBDXeR5ztJ
+      postgresql:
+        auth:
+          existingSecret: postgres-{{ .Values.deploymentName }}
+          username: synapse
+- name: redis-{{ .Values.deploymentName }}
+  kubeContext: se/agent:ebhh-test
+  namespace: dev-matrix
+  chart: ./charts/redis
+  values:
+    - redis:
+        architecture: standalone
+        auth:
+          enabled: false
+- name: matrix-{{ .Values.deploymentName }}
+  kubeContext: se/agent:ebhh-test
+  namespace: dev-matrix
+  chart: matrix/matrix
+  version: 0.1.4
+  needs:
+    - postgres-{{ .Values.deploymentName }}
+    - redis-{{ .Values.deploymentName }}
+  values:
+    - synapse:
+        homeserverConfig:    
+          database:
+            name: psycopg2
+            txn_limit: 10000
+            args:
+              dbname: synapse
+              host: postgres-{{ .Values.deploymentName }}-postgresql
+          redis:
+            dbid: 0
+        pvc:
+          storageClassName: csi-cephfs-sc
+        database:
+          secret: postgres-{{ .Values.deploymentName }}
+          configmap: postgres-{{ .Values.deploymentName }}
+        redis:
+          configmap: redis.connection-redis-{{ .Values.deploymentName }}
+    - synapse:
+        deployment:
+          image:
+            repository: dockerregistry.metaways.net/ebhh/element-build/synapse
+            tag: d1
+    - synapse:
+        homeserverConfig:
+          server_name: {{ .Values.deploymentName }}.{{ .Values.baseDomain }}
+        ingress:
+          hostname: matrix.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
+      element:
+        ingress:
+          hostname:
+            element.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
+    - synapse:
+        secrets:
+          registration_shared_secret: LpmVf4Qgyp02MHiUG6LrZrjLwyZ56SusMAp8wTVXfXsWfwCVyFlSJgRuXBTvhuyU
+          macaroon_secret_key: SxXTekdQJrHURuuszeanTtEW21XWPplX12JuUwzjx1CiLS9aN9LmHzWBETjkAfKo
+          form_secret: UsEOlnMpqBGR5Xx69dWWYwb04nJsr5gLD4I3DGZrtSJIb15Ex7tIBVV1p6OqxabG
+          signing_key: ed25519 a_sCgd KuTfE3bGnylMFwo2sY1Ede1tNN5IVSL4YyqvD/tAP/o
+      corporal:
+        secrets:
+          shared_secret: tLinadEFayALotslYYed6waQT9q4vQ2909hZqMIAIqpcNv1pXqMDpVDFihyRUUPj
+          authorization_bearer_token: CtBEYSx7SPSevNAaux0rDVqWfwYJR7aohvD9SqGtC8NRFPPIy6zphg6rXmgTfVDJ
+    - synapse:
+        homeserverConfig:  
+          enable_registration: true
+          enable_registration_without_verification: true
+      corporal:
+        enabled: false
