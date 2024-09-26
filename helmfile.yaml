@@ -7,15 +7,18 @@ environments:
     values:
       - deploymentName: appreview
         baseDomain: matrix.mws-hosting.net
+        
 
 helmDefaults:
   wait: true
   waitForJobs: true
 
 repositories:
-  - name: matrix
+  - name: matrix-registry
     url: dockerregistry.metaways.net/se/matrix-chart/charts
     oci: true
+  - name: dex-registry
+    url: https://charts.dexidp.io
 
 releases:
 - name: postgres-{{ .Values.deploymentName }}
@@ -24,11 +27,10 @@ releases:
   chart: ./charts/postgres
   values:
     - mwconnection:
-        password: lGjSRRe14NbhH4IJ9voaweJylZ5nY2qDfaCoPy51wyZwTvzqa0AhqmWpLyunO55u
-        postgresPassword: AqUej8A81ZM8enzif4CZsiqNUIkMwfvZ4jIVtwsj3CD7JBExvKxnvPCBDXeR5ztJ
+        password: {{ env "TEST_DEPLOY_DB_PASSWORD" | default "lGjSRRe14NbhH4IJ9voaweJylZ5nY2qDfaCoPy51wyZwTvzqa0AhqmWpLyunO55u" }}
       postgresql:
         auth:
-          existingSecret: postgres-{{ .Values.deploymentName }}
+          password: {{ env "TEST_DEPLOY_DB_PASSWORD" | default "lGjSRRe14NbhH4IJ9voaweJylZ5nY2qDfaCoPy51wyZwTvzqa0AhqmWpLyunO55u" }}
           username: synapse
 - name: redis-{{ .Values.deploymentName }}
   kubeContext: se/agent:ebhh-test
@@ -39,14 +41,73 @@ releases:
         architecture: standalone
         auth:
           enabled: false
+- name: dex-{{ .Values.deploymentName }}
+  kubeContext: se/agent:ebhh-test
+  namespace: dev-matrix
+  chart: dex-registry/dex
+  values:
+    - https:
+        enabled: false
+      config:
+        storage:
+          type: memory
+        logger:
+          level: "debug"
+        connectors:
+        oauth2:
+          skipApprovalScreen: true
+        enablePasswordDB: true
+        staticPasswords:
+        - email: "dex1@example.com"
+          # bcrypt hash of the string "password": $(echo password | htpasswd -BinC 10 admin | cut -d: -f2)
+          hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+          username: "dex1"
+          userID: "11111"
+        - email: "dex2@example.com"
+          hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+          username: "dex2"
+          userID: "22222"
+        - email: "dex3@example.com"
+          hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+          username: "dex3"
+          userID: "33333"
+        - email: "googlereview@main.dev-matrix.ebhh-test.k8s.mmertens.metaways.me"
+          # $(echo googlereview | htpasswd -BinC 10 admin | cut -d: -f2)
+          hash: "$2y$10$sB8gqSnHgiKpPVXx7//FYeZ56aJGUC3fj8XQw31ixZa3GGSXb7sq2"
+          username: "googlereview"
+          userID: "44444"
+      ingress:
+        enabled: true
+        annotations:
+          kubernetes.io/tls-acme: "true"
+    - config:
+        issuer: https://dex.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
+        staticClients:
+          - id: synapse
+            redirectURIs:
+              - https://matrix.{{ .Values.deploymentName }}.{{.Values.baseDomain }}/_synapse/client/oidc/callback
+            name: synapse
+            secret: {{ env "TEST_DEPLOY_OAUTH_SECRET" | default "MAFjXuyTc1NPktfWgeHkZ12u9PjDXpvP63kMUZEVsClezMM9wxdKNovm5zlU8JTF" }}
+      ingress:
+        hosts:
+          - host: dex.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
+            paths:
+              - path: /
+                pathType: ImplementationSpecific
+        tls:
+          - secretName: dex.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}-tls
+            hosts:
+              - dex.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
+
 - name: matrix-{{ .Values.deploymentName }}
   kubeContext: se/agent:ebhh-test
   namespace: dev-matrix
-  chart: matrix/matrix
-  version: 0.1.4
+  chart: {{ env "MATRIX_CHART" | default "./charts/matrix" }}
+  version: {{ env "MATRIX_CHART_VERSION" | default "" }}
   needs:
     - postgres-{{ .Values.deploymentName }}
     - redis-{{ .Values.deploymentName }}
+    - dex-{{ .Values.deploymentName }}
   values:
     - synapse:
         homeserverConfig:    
@@ -77,21 +138,58 @@ releases:
           hostname: matrix.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
       element:
         ingress:
-          hostname:
-            element.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
+          hostname: element.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
     - synapse:
         secrets:
-          registration_shared_secret: LpmVf4Qgyp02MHiUG6LrZrjLwyZ56SusMAp8wTVXfXsWfwCVyFlSJgRuXBTvhuyU
-          macaroon_secret_key: SxXTekdQJrHURuuszeanTtEW21XWPplX12JuUwzjx1CiLS9aN9LmHzWBETjkAfKo
-          form_secret: UsEOlnMpqBGR5Xx69dWWYwb04nJsr5gLD4I3DGZrtSJIb15Ex7tIBVV1p6OqxabG
-          signing_key: ed25519 a_sCgd KuTfE3bGnylMFwo2sY1Ede1tNN5IVSL4YyqvD/tAP/o
+          registration_shared_secret: {{ env "TEST_DEPLOY_REGISTRATION_SHARED_SECRET" | default "LpmVf4Qgyp02MHiUG6LrZrjLwyZ56SusMAp8wTVXfXsWfwCVyFlSJgRuXBTvhuyU" }}
+          macaroon_secret_key: {{ env "TEST_DEPLOY_MACAROON_SECRET_KEY" | default "SxXTekdQJrHURuuszeanTtEW21XWPplX12JuUwzjx1CiLS9aN9LmHzWBETjkAfKo" }}
+          form_secret: {{ env "TEST_DEPLOY_FORM_SECRET" | default "UsEOlnMpqBGR5Xx69dWWYwb04nJsr5gLD4I3DGZrtSJIb15Ex7tIBVV1p6OqxabG" }}
+          signing_key: {{ env "TEST_DEPLOY_SIGNING_KEY" | default "ed25519 a_sCgd KuTfE3bGnylMFwo2sY1Ede1tNN5IVSL4YyqvD/tAP/o" }}
       corporal:
         secrets:
-          shared_secret: tLinadEFayALotslYYed6waQT9q4vQ2909hZqMIAIqpcNv1pXqMDpVDFihyRUUPj
-          authorization_bearer_token: CtBEYSx7SPSevNAaux0rDVqWfwYJR7aohvD9SqGtC8NRFPPIy6zphg6rXmgTfVDJ
+          shared_secret: {{ env "TEST_DEPLOY_SHARED_SECRET" | default "tLinadEFayALotslYYed6waQT9q4vQ2909hZqMIAIqpcNv1pXqMDpVDFihyRUUPj" }}
+          authorization_bearer_token: {{ env "TEST_DEPLOY_AUTHORIZATION_BEARER_TOKEN" | default "CtBEYSx7SPSevNAaux0rDVqWfwYJR7aohvD9SqGtC8NRFPPIy6zphg6rXmgTfVDJ" }}
     - synapse:
         homeserverConfig:  
           enable_registration: true
           enable_registration_without_verification: true
-      corporal:
-        enabled: false
+    - oauth:
+        secret: {{ env "TEST_DEPLOY_OAUTH_SECRET" | default "MAFjXuyTc1NPktfWgeHkZ12u9PjDXpvP63kMUZEVsClezMM9wxdKNovm5zlU8JTF" }}
+        issuer: dex.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
+    - {{ .Environment.Name }}.synapse.values.yaml
+
+- name: element-{{ .Values.deploymentName }}
+  kubeContext: se/agent:ebhh-test
+  namespace: dev-matrix
+  chart: {{ env "ELEMENT_CHART" | default "./charts/element" }}
+  version: {{ env "ELEMENT_CHART_VERSION" }}
+  values:
+    - element:
+        config:
+          sso_redirect_options:
+            immediate: true
+        deployment:
+          image:
+            repository: dockerregistry.metaways.net/ebhh/element-build/element
+            tag: "117016"
+    - element:
+        ingress:
+          hostname: element.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
+      synapse:
+        ingress:
+          hostname: matrix.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}
+
+- name: sygnal-{{ .Values.deploymentName }}
+  kubeContext: se/agent:ebhh-test
+  namespace: dev-matrix
+  chart: {{ env "SYGNAL_CHART" | default "./charts/sygnal" }}
+  version: {{ env "SYGNAL_CHART_VERSION" }}
+  values:
+    - config:
+        apps:
+          # some app needs to be configured otherwise sygnal dose not start
+          com.example.myapp.android:
+            type: gcm
+            api_key: your_api_key_for_gcm
+      ingress:
+        hostname: push.{{ .Values.deploymentName }}.{{ .Values.baseDomain }}

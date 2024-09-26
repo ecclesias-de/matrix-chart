@@ -86,7 +86,7 @@ package-sygnal-chart:
 
 test-deploy:
   stage: test
-  image: alpine/k8s:1.25.15
+  image: ghcr.io/helmfile/helmfile:v0.162.0
   environment:
     name: test-$CI_COMMIT_REF_SLUG
     url: https://element.$CI_COMMIT_REF_SLUG.$TEST_DEPLOY_BASE_DOMAIN
@@ -94,18 +94,19 @@ test-deploy:
     on_stop: test-deploy-teardown
   variables:
     DEPLOYMENT_NAME: $CI_COMMIT_REF_SLUG
+    MATRIX_CHART: matrix-registry/matrix
+    ELEMENT_CHART: matrix-registry/element
+    SYGNAL_CHART: matrix-registry/sygnal
+    KUBE_CONTEXT: se/agent:ebhh-test
   before_script:
     - helm registry login "${CI_REGISTRY}" -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}"
     - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
-    - helm repo add dex https://charts.dexidp.io
     - kubectl config use-context $TEST_DEPLOY_AGENT_CONTEXT
-    - task test-deploy:dex
-    - task test-deploy:postgres
-    - task test-deploy:redis
   script:
-    - CHART="oci://${CI_REGISTRY_IMAGE}/charts/sygnal --version 0.0.0+${CI_COMMIT_SHORT_SHA}" task test-deploy:sygnal
-    - CHART="oci://${CI_REGISTRY_IMAGE}/charts/matrix --version 0.0.0+${CI_COMMIT_SHORT_SHA}" task test-deploy:matrix
-    - CHART="oci://${CI_REGISTRY_IMAGE}/charts/element --version 0.0.0+${CI_COMMIT_SHORT_SHA}" task test-deploy:element
+    - export MATRIX_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
+    - export ELEMENT_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
+    - export SYGNAL_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
+    - task test-deploy
     - task test-deploy:init-corporal-policy || (sleep 30; task test-deploy:init-corporal-policy)
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -113,16 +114,23 @@ test-deploy:
 
 test-deploy-teardown:
   stage: test
-  image: alpine/k8s:1.25.15
+  image: ghcr.io/helmfile/helmfile:v0.162.0
   environment:
     name: test-$CI_COMMIT_REF_SLUG
     action: stop
   variables:
     DEPLOYMENT_NAME: $CI_COMMIT_REF_SLUG
+    MATRIX_CHART: matrix-registry/matrix
+    ELEMENT_CHART: matrix-registry/element
+    SYGNAL_CHART: matrix-registry/sygnal
+    KUBE_CONTEXT: se/agent:ebhh-test
   before_script:
     - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
     - kubectl config use-context $TEST_DEPLOY_AGENT_CONTEXT
   script:
+    - export MATRIX_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
+    - export ELEMENT_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
+    - export SYGNAL_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
     - task test-deploy:teardown
   when: manual
   rules:

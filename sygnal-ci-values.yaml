@@ -1,6 +1,0 @@
-config:
-  apps:
-    # some app needs to be configured otherwise sygnal dose not start
-    com.example.myapp.android:
-      type: gcm
-      api_key: your_api_key_for_gcm

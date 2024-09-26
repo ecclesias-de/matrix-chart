@@ -2,120 +2,20 @@ version: '3'
 
 vars:
   NAMESPACE: dev-matrix
+  KUBE_CONTEXT: '{{.KUBE_CONTEXT | default "ebhh-test"}}'
   DEPLOYMENT_NAME: '{{.DEPLOYMENT_NAME | default "dev"}}'
-
   BASE_DOMAIN: '{{env "TEST_DEPLOY_BASE_DOMAIN" | default "localhost"}}'
-  REGISTRATION_SHARED_SECRET: '{{env "TEST_DEPLOY_REGISTRATION_SHARED_SECRET" | default "LpmVf4Qgyp02MHiUG6LrZrjLwyZ56SusMAp8wTVXfXsWfwCVyFlSJgRuXBTvhuyU"}}'
-  MACAROON_SECRET_KEY: '{{env "TEST_DEPLOY_MACAROON_SECRET_KEY" | default "SxXTekdQJrHURuuszeanTtEW21XWPplX12JuUwzjx1CiLS9aN9LmHzWBETjkAfKo"}}'
-  FORM_SECRET: '{{env "TEST_DEPLOY_FORM_SECRET" | default "UsEOlnMpqBGR5Xx69dWWYwb04nJsr5gLD4I3DGZrtSJIb15Ex7tIBVV1p6OqxabG"}}'
-  SIGNING_KEY: '{{env "TEST_DEPLOY_SIGNING_KEY" | default "ed25519 a_sCgd KuTfE3bGnylMFwo2sY1Ede1tNN5IVSL4YyqvD/tAP/o"}}'
-  OAUTH_SECRET: '{{env "TEST_DEPLOY_OAUTH_SECRET" | default "MAFjXuyTc1NPktfWgeHkZ12u9PjDXpvP63kMUZEVsClezMM9wxdKNovm5zlU8JTF"}}'
-  SHARED_SECRET: '{{env "TEST_DEPLOY_SHARED_SECRET" | default "tLinadEFayALotslYYed6waQT9q4vQ2909hZqMIAIqpcNv1pXqMDpVDFihyRUUPj"}}'
   AUTHORIZATION_BEARER_TOKEN: '{{env "TEST_DEPLOY_AUTHORIZATION_BEARER_TOKEN" | default "CtBEYSx7SPSevNAaux0rDVqWfwYJR7aohvD9SqGtC8NRFPPIy6zphg6rXmgTfVDJ"}}'
-  DB_PASSWORD: '{{env "TEST_DEPLOY_DB_PASSWORD" | default "lGjSRRe14NbhH4IJ9voaweJylZ5nY2qDfaCoPy51wyZwTvzqa0AhqmWpLyunO55u"}}'
-  DB_POSTGRES_PASSWORD: '{{env "TEST_DEPLOY_DB_POSTGRES_PASSWORD" | default "AqUej8A81ZM8enzif4CZsiqNUIkMwfvZ4jIVtwsj3CD7JBExvKxnvPCBDXeR5ztJ"}}'
 
 tasks:
-  test-deploy:matrix:
-    vars:
-      CHART: '{{.CHART | default "./charts/matrix"}}'
+  test-deploy:
     cmds:
-      - >
-        helm upgrade --install -n {{.NAMESPACE}} matrix-{{.DEPLOYMENT_NAME}} {{.CHART}}
-        --wait --atomic
-        --values ci-values.yaml 
-        --set synapse.homeserverConfig.server_name={{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
-        --set synapse.homeserverConfig.database.args.host=postgres-{{.DEPLOYMENT_NAME}}-postgresql
-        --set synapse.ingress.hostname=matrix.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
-        --set synapse.database.secret=postgres-{{.DEPLOYMENT_NAME}}
-        --set synapse.database.configmap=postgres-{{.DEPLOYMENT_NAME}}
-        --set synapse.redis.configmap=redis.connection-{{.DEPLOYMENT_NAME}}
-        --set synapse.secrets.registration_shared_secret={{.REGISTRATION_SHARED_SECRET}}
-        --set synapse.secrets.macaroon_secret_key={{.MACAROON_SECRET_KEY}}
-        --set synapse.secrets.form_secret={{.FORM_SECRET}}
-        --set synapse.secrets.signing_key="{{.SIGNING_KEY}}"
-        --set oauth.issuer=dex.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
-        --set oauth.secret={{.OAUTH_SECRET}}
-        --set element.ingress.hostname=element.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
-        --set corporal.secrets.shared_secret={{.SHARED_SECRET}}
-        --set corporal.secrets.authorization_bearer_token={{.AUTHORIZATION_BEARER_TOKEN}}
-  
-  test-deploy:element:
-    vars:
-      CHART: '{{.CHART | default "./charts/element"}}'
-    cmds:
-      - >
-        helm upgrade --install -n {{.NAMESPACE}} element-{{.DEPLOYMENT_NAME}} {{.CHART}}
-        --wait --atomic
-        --values element-ci-values.yaml 
-        --set element.ingress.hostname=element.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
-        --set synapse.ingress.hostname=matrix.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
-
-  test-deploy:sygnal:
-    vars:
-      CHART: '{{.CHART | default "./charts/sygnal"}}'
-    cmds:
-      - >
-        helm upgrade --install -n {{.NAMESPACE}} sygnal-{{.DEPLOYMENT_NAME}} {{.CHART}}
-        --wait --atomic
-        --values sygnal-ci-values.yaml
-        --set ingress.hostname=push.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
-
-  test-deploy:dex:
-    cmds:
-      - >
-        helm upgrade --install -n {{.NAMESPACE}} dex-{{.DEPLOYMENT_NAME}} dex/dex
-        --wait --atomic
-        --values dex-ci-values.yaml
-        --set config.issuer=https://dex.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}
-        --set-json ingress.hosts='[{"host": "dex.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}", "paths": [{"path": "/", "pathType": "ImplementationSpecific"}]}]'
-        --set-json ingress.tls='[{"secretName": "dex.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}", "hosts": ["dex.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}"]}]'
-        --set-json config.staticClients='[{"id": "synapse", "redirectURIs": ["https://matrix.{{.DEPLOYMENT_NAME}}.{{.BASE_DOMAIN}}/_synapse/client/oidc/callback"], "name": "synapse", "secret": "{{.OAUTH_SECRET}}"}]'
-
-  test-deploy:postgres:
-    cmds:
-      - >
-        kubectl create secret generic postgres-{{.DEPLOYMENT_NAME}}
-        -n {{.NAMESPACE}}
-        --from-literal password={{.DB_PASSWORD}}
-        --from-literal postgres-password={{.DB_POSTGRES_PASSWORD}}
-        --from-literal username=synapse
-        --dry-run=client -o yaml | kubectl apply -f -
-      - >
-        kubectl create configmap postgres-{{.DEPLOYMENT_NAME}}
-        -n {{.NAMESPACE}}
-        --from-literal HOST=postgres-{{.DEPLOYMENT_NAME}}-postgresql
-        --dry-run=client -o yaml | kubectl apply -f -
-      - helm dependency build --skip-refresh ./charts/postgres 
-      - >
-        helm upgrade --install -n {{.NAMESPACE}} postgres-{{.DEPLOYMENT_NAME}} ./charts/postgres
-        --wait --atomic
-        --values postgres-ci-values.yaml
-        --set postgresql.auth.existingSecret=postgres-{{.DEPLOYMENT_NAME}}
-
-  test-deploy:redis:
-    cmds:
-      - >
-        helm upgrade --install -n {{.NAMESPACE}} redis-{{.DEPLOYMENT_NAME}} oci://registry-1.docker.io/bitnamicharts/redis
-        --set auth.enabled=false
-        --set architecture=standalone
-      - >
-        kubectl create configmap redis.connection-{{.DEPLOYMENT_NAME}}
-        -n {{.NAMESPACE}}
-        --from-literal REDIS_HOST=redis-{{.DEPLOYMENT_NAME}}-master
-        --dry-run=client -o yaml | kubectl apply -f -
+      - BASE_DOMAIN={{.BASE_DOMAIN}} DEPLOYMENT_NAME={{.DEPLOYMENT_NAME}} helmfile -f helmfile.yaml --kube-context {{.KUBE_CONTEXT}} apply
 
   test-deploy:teardown:
     cmds:
-      - helm uninstall -n {{.NAMESPACE}} matrix-{{.DEPLOYMENT_NAME}} --wait --ignore-not-found
-      - helm uninstall -n {{.NAMESPACE}} sygnal-{{.DEPLOYMENT_NAME}} --wait --ignore-not-found
-      - helm uninstall -n {{.NAMESPACE}} dex-{{.DEPLOYMENT_NAME}} --wait --ignore-not-found
-      - helm uninstall -n {{.NAMESPACE}} postgres-{{.DEPLOYMENT_NAME}} --wait
-      - helm uninstall -n {{.NAMESPACE}} redis-{{.DEPLOYMENT_NAME}} --wait
-      - kubectl delete -n {{.NAMESPACE}} secret postgres-{{.DEPLOYMENT_NAME}}
-      - kubectl delete -n {{.NAMESPACE}} pvc data-postgres-{{.DEPLOYMENT_NAME}}-postgresql-0
-      - kubectl delete -n {{.NAMESPACE}} configmap redis.connection-{{.DEPLOYMENT_NAME}}
-      - kubectl delete -n {{.NAMESPACE}} pvc redis-data-redis-{{.DEPLOYMENT_NAME}}-master-0
+      - helmfile -f helmfile.yaml --kube-context {{.KUBE_CONTEXT}} destroy
+      - kubectl delete -n dev-matrix pvc corporal-matrix-{{.DEPLOYMENT_NAME}}-matrix data-postgres-{{.DEPLOYMENT_NAME}}-postgresql-0 redis-data-redis-{{.DEPLOYMENT_NAME}}-master-0
 
   test-deploy:init-corporal-policy:
     cmds:

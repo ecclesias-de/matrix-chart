@@ -1,16 +1,5 @@
 synapse:
   homeserverConfig:    
-    database:
-      name: psycopg2
-      txn_limit: 10000
-      args:
-        dbname: synapse
-    redis:
-      dbid: 0
-
-    enable_registration: true
-    enable_registration_without_verification: true
-
     # document that this is needed for matrix corporal or inject everything inside the entrypoint
     modules:
     - module: shared_secret_authenticator.SharedSecretAuthProvider
@@ -37,34 +26,10 @@ synapse:
         - https://{{ .Values.element.ingress.hostname }}/
     update_profile_information: true
 
-  pvc:
-    storageClassName: csi-cephfs-sc
-
   logConfig:
     loggers:
       shared_secret_authenticator:
         level: INFO
 
-  deployment:
-    image:
-      repository: dockerregistry.metaways.net/ebhh/element-build/synapse
-      tag: d1
-
-  pvc:
-    storageClassName: csi-cephfs-sc
-
-debug:
-  diagnoseMode:
-    synapse:
-      enabled: false
-    wellknown:
-      enabled: false
-    corporal:
-      enabled: false
-  securityContext:
-    synapse:
-      enabled: true
-    wellknown:
-      enabled: true
-    corporal:
-      enabled: true
+corporal:
+  enabled: true
