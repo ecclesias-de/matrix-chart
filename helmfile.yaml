@@ -127,11 +127,6 @@ releases:
         redis:
           configmap: redis.connection-redis-{{ .Values.deploymentName }}
     - synapse:
-        deployment:
-          image:
-            repository: dockerregistry.metaways.net/ebhh/element-build/synapse
-            tag: d1
-    - synapse:
         homeserverConfig:
           server_name: {{ .Values.deploymentName }}.{{ .Values.baseDomain }}
         ingress:
