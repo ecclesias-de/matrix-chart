@@ -195,7 +195,7 @@ corporal:
     imagePullSecrets: []
     image:
       repository: devture/matrix-corporal
-      tag: 2.7.0
+      tag: 3.0.0
     resources: {}
 
   ingress:
