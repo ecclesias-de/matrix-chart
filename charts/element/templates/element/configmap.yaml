@@ -7,3 +7,5 @@ metadata:
 data:
   config.json: |
     {{- tpl ( .Values.element.config | toJson ) . | nindent 4 }}
+
+  nginx.conf: | {{ .Values.element.nginx_vhost_overwrite | nindent 4 }}

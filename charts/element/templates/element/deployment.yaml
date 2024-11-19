@@ -51,6 +51,12 @@ spec:
           mountPath: /usr/share/element/config.json
           subPath: config.json
           readOnly: true
+        {{- if .Values.element.nginx_vhost_overwrite }}
+        - name: config
+          mountPath: /etc/nginx/default.conf
+          subPath: nginx.conf
+          readOnly: true
+        {{- end }}
       volumes:
       - name: config
         configMap:
