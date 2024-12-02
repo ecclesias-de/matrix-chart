@@ -14,6 +14,7 @@ spec:
     - host: {{ .Values.synapse.ingress.hostname }}
       http:
         paths:
+          # endpoints which can be handled by synapses main process or a generic worker
           {{- $global := . }}
           {{- range $endpoint := .Values.synapseEndpoints.generic }}
           - path: {{ $endpoint }}

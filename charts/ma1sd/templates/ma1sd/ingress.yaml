@@ -1,0 +1,29 @@
+{{- if .Values.ma1sd.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "ma1sd.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "ma1sd.labels" . | nindent 4 }}
+  {{- if .Values.ma1sd.ingress.annotations }}
+  annotations: {{ .Values.ma1sd.ingress.annotations | toYaml | nindent 4 }}
+    nginx.ingress.kubernetes.io/use-regex: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /_matrix/client/r0/user_directory/search
+  {{- end }}
+spec:
+  rules:
+    - host: {{ .Values.synapse.ingress.hostname }}
+      http:
+        paths:
+          - path:  /_matrix/client/v3/user_directory/search
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "ma1sd.basename" . }}
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - {{ .Values.synapse.ingress.hostname | quote }}
+      secretName: {{ printf "%s-tls" .Values.synapse.ingress.hostname }}
+{{- end }}

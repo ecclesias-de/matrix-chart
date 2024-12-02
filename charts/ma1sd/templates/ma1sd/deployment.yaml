@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "ma1sd.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "ma1sd.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "ma1sd.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "ma1sd.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/ma1sd/configmap.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.ma1sd.deployment.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.ma1sd.deployment.imagePullSecrets}}
+      - {{ toYaml . }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: ma1sd
+        image: {{ .Values.ma1sd.deployment.image.repository }}:{{ .Values.ma1sd.deployment.image.tag }}
+        imagePullPolicy: IfNotPresent
+        {{- if .Values.debug.diagnoseMode.ma1sd.enabled }}
+        command: {{- toYaml .Values.debug.diagnoseMode.ma1sd.command  | nindent 12 }}
+        {{- end}}
+        {{- if .Values.ma1sd.deployment.resources }}
+        resources: {{- toYaml .Values.ma1sd.deployment.resources | nindent 12 }}
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: 8090
+        {{- if .Values.debug.securityContext.ma1sd.enabled }}
+        securityContext:
+          runAsNonRoot: false
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/ma1sd/ma1sd.yaml
+          subPath: ma1sd.yaml
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "ma1sd.basename" . }}

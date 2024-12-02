@@ -29,6 +29,13 @@ include:
     inputs:
       name: element-call
       tag_name_postfix: ""
+  - component: $CI_SERVER_FQDN/gitlabci-components/image-build/build@1.0.0
+    inputs:
+      name: ma1sd
+      registry: registry.rz1.metaways.net
+      registry_repo: registry.rz1.metaways.net/devops
+      registry_user: $REGISTRY_RZ1_USER
+      registry_password: $REGISTRY_RZ1_PASSWORD
 
 build-synapse-image:
   stage: package

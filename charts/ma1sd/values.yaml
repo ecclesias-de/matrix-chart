@@ -1,0 +1,57 @@
+ma1sd:
+  # values inside these config are rended by the templateing engin. See readme for usage and caveats.
+  config:
+    matrix:
+      domain: '{{ .Values.synapse.ingress.hostname }}'
+
+    dns:
+      overwrite:
+        homeserver:
+          client:
+            - name: '{{ .Values.synapse.ingress.hostname }}'
+              value: 'http://{{ .Values.synapse.service.name }}'
+
+    directory:
+      exclude:
+        homeserver: false
+
+    storage:
+      provider:
+        sqlite:
+          database: /var/ma1sd/db.sqlite
+
+    key:
+      path: /var/ma1sd/key
+
+    logging:
+      root: debug
+
+  deployment:
+    imagePullSecrets: []
+    image:
+      repository: registry.rz1.metaways.net/devops/ma1sd
+      tag: 2.5.0-mw1
+    resources: {}
+
+  ingress:
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    enabled: true
+
+debug:
+  diagnoseMode:
+    ma1sd:
+      enabled: false
+      command:
+        - tail
+        - -f
+        - /dev/null
+  securityContext:
+    ma1sd:
+      enabled: true
+
+synapse:
+  ingress:
+    hostname:
+  service:
+    name: 

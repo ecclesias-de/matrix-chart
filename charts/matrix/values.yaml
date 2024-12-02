@@ -259,7 +259,7 @@ debug:
       enabled: true
 
 # synapse nginx locations regex
-# locations need to start with an / nginx will prepend and ^
+# locations need to start with an /. nginx will prepend a ^
 synapseEndpoints:
   generic:
     # Sync requests
@@ -311,7 +311,7 @@ synapseEndpoints:
     - /_matrix/client/(api/v1|r0|v3|unstable)/joined_rooms$
     - /_matrix/client/v1/rooms/.*/timestamp_to_event$
     - /_matrix/client/(api/v1|r0|v3|unstable/.*)/rooms/.*/aliases
-    - /_matrix/client/(api/v1|r0|v3|unstable)/search$
+    # - /_matrix/client/(api/v1|r0|v3|unstable)/search$
     - /_matrix/client/(r0|v3|unstable)/user/.*/filter(/|$)
     - /_matrix/client/(api/v1|r0|v3|unstable)/directory/room/.*$
     - /_matrix/client/(r0|v3|unstable)/capabilities$
