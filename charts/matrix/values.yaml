@@ -92,7 +92,7 @@ synapse:
     imagePullSecrets: []
     image:
       repository: dockerregistry.metaways.net/se/matrix-chart/synapse  
-      tag: v1.116.0-mw1
+      tag: v1.121.1-mw1
     resources: {}
 
   ingress:
