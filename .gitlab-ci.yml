@@ -8,6 +8,20 @@ stages:
   - package
   - test
 
+include:
+  - component: $CI_SERVER_FQDN/gitlabci-components/helm-build/build@1.1.0
+    inputs:
+      name: matrix
+      tag_name_postfix: ""
+  - component: $CI_SERVER_FQDN/gitlabci-components/helm-build/build@1.1.0
+    inputs:
+      name: element
+      tag_name_postfix: ""
+  - component: $CI_SERVER_FQDN/gitlabci-components/helm-build/build@1.1.0
+    inputs:
+      name: sygnal
+      tag_name_postfix: ""
+
 build-synapse-image:
   stage: package
   image:
@@ -39,51 +53,6 @@ build-synapse-image:
     - if: $CI_COMMIT_TAG =~ /^synapse-image-v.*/
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
-package-matrix-chart:
-  stage: package
-  image: alpine/k8s:1.25.15
-  before_script:
-    - helm registry login "${CI_REGISTRY}" -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}"
-  script:
-    - export CHART_VERSION=$(echo "${CI_COMMIT_TAG:-matrix-0.0.0+${CI_COMMIT_SHORT_SHA}}" | cut -b 8-)
-    - yq e -i '.version = (strenv(CHART_VERSION))' ./charts/matrix/Chart.yaml
-    - helm package -d build/ -u ./charts/matrix
-    - helm push build/*-${CHART_VERSION}.tgz "oci://${CI_REGISTRY_IMAGE}/charts"
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^matrix-.*/
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-package-element-chart:
-  stage: package
-  image: alpine/k8s:1.25.15
-  before_script:
-    - helm registry login "${CI_REGISTRY}" -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}"
-  script:
-    - export CHART_VERSION=$(echo "${CI_COMMIT_TAG:-element-0.0.0+${CI_COMMIT_SHORT_SHA}}" | cut -b 9-)
-    - yq e -i '.version = (strenv(CHART_VERSION))' ./charts/element/Chart.yaml
-    - helm package -d build/ -u ./charts/element
-    - helm push build/*-${CHART_VERSION}.tgz "oci://${CI_REGISTRY_IMAGE}/charts"
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^element-.*/
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-package-sygnal-chart:
-  stage: package
-  image: alpine/k8s:1.25.15
-  before_script:
-    - helm registry login "${CI_REGISTRY}" -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}"
-  script:
-    - export CHART_VERSION=$(echo "${CI_COMMIT_TAG:-sygnal-0.0.0+${CI_COMMIT_SHORT_SHA}}" | cut -b 8-)
-    - yq e -i '.version = (strenv(CHART_VERSION))' ./charts/sygnal/Chart.yaml
-    - helm package -d build/ -u ./charts/sygnal
-    - helm push build/*-${CHART_VERSION}.tgz "oci://${CI_REGISTRY_IMAGE}/charts"
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^sygnal-.*/
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
 test-deploy:
   stage: test
   image: ghcr.io/helmfile/helmfile:v0.162.0
@@ -103,9 +72,9 @@ test-deploy:
     - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
     - kubectl config use-context $TEST_DEPLOY_AGENT_CONTEXT
   script:
-    - export MATRIX_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
-    - export ELEMENT_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
-    - export SYGNAL_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
+    - export MATRIX_CHART_VERSION=0.0.0+mw0sha${CI_COMMIT_SHORT_SHA}
+    - export ELEMENT_CHART_VERSION=0.0.0+mw0sha${CI_COMMIT_SHORT_SHA}
+    - export SYGNAL_CHART_VERSION=0.0.0+mw0sha${CI_COMMIT_SHORT_SHA}
     - task test-deploy
     - task test-deploy:init-corporal-policy || (sleep 30; task test-deploy:init-corporal-policy)
   rules:
@@ -128,9 +97,9 @@ test-deploy-teardown:
     - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
     - kubectl config use-context $TEST_DEPLOY_AGENT_CONTEXT
   script:
-    - export MATRIX_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
-    - export ELEMENT_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
-    - export SYGNAL_CHART_VERSION=0.0.0+${CI_COMMIT_SHORT_SHA}
+    - export MATRIX_CHART_VERSION=0.0.0+mw0sha${CI_COMMIT_SHORT_SHA}
+    - export ELEMENT_CHART_VERSION=0.0.0+mw0sha${CI_COMMIT_SHORT_SHA}
+    - export SYGNAL_CHART_VERSION=0.0.0+mw0sha${CI_COMMIT_SHORT_SHA}
     - task test-deploy:teardown
   when: manual
   rules:
