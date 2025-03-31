@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "livekitJwt.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "livekitJwt.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.livekitJwt.deployment.replicas }}
+  selector:
+    matchLabels: {{- include "livekitJwt.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "livekitJwt.labels" . | nindent 8 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/livekit-jwt/secret.yaml") . | sha256sum }}
+    spec:
+      serviceAccount: {{ .Values.serviceAccount }}
+      {{- define "livekitJwt.podSecurityContext" }}
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      {{- end }}
+      {{- include "livekitJwt.podSecurityContext" . }}
+      containers:
+        - name: livekit-jwt
+
+          image: {{ .Values.livekitJwt.deployment.image.repository }}:{{ .Values.livekitJwt.deployment.image.tag }}
+          imagePullPolicy: {{ .Values.livekitJwt.deployment.image.imagePullPolicy }}
+
+          {{- if .Values.debug.diagnoseMode.livekitJwt.enabled }}
+          command: {{- toYaml .Values.debug.diagnoseMode.livekitJwt.command  | nindent 12 }}
+          {{- end }}
+
+          {{- if .Values.livekitJwt.deployment.resources }}
+          resources: {{- toYaml .Values.livekitJwt.deployment.resources | nindent 12 }}
+          {{- end }}
+
+          {{- define "livekitJwt.envFrom" }}
+          envFrom:
+            - secretRef:
+                name: {{ template "livekitJwt.secret" . }}
+          {{- end }}
+          {{- include "livekitJwt.envFrom" . }}
+
+          {{- define "livekitJwt.containerSecurityContext" }}
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            capabilities:
+            drop: [ALL]
+          {{- end }}
+          {{- include "livekitJwt.containerSecurityContext" . }}
+
+      imagePullSecrets:
+      {{- if .Values.pullSecret.data }}
+        - name: {{ template "livekitJwt.basename" . }}-pull-secret
+      {{- end }}

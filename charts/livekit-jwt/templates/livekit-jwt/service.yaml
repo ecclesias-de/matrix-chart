@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "livekitJwt.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "livekitJwt.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  # clusterIP: None
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector: {{- include "livekitJwt.matchLabels" . | nindent 4 }}

@@ -1,0 +1,38 @@
+livekitJwt:
+  deployment:
+    replicas: 2
+    image:
+      repository: ghcr.io/element-hq/lk-jwt-service
+      tag: 0.2.1
+      imagePullPolicy: IfNotPresent
+    resources:
+      limits:
+        memory: 50Mi
+      requests:
+        cpu: 10m
+        memory: 50Mi
+
+  ingress:
+    enabled: true
+    hostname: #REQUIRED
+    annotations: 
+      kubernetes.io/tls-acme: "true"
+
+  secrets:
+    existingSecret:
+    LIVEKIT_URL: #REQUIRED
+    LIVEKIT_KEY:  #REQUIRED
+    LIVEKIT_SECRET:  #REQUIRED
+
+metadata:
+  team: #REQUIRED
+  name:
+
+pullSecret:
+  data: #OPTIONAL
+
+debug:
+  diagnoseMode:
+    livekitJwt:
+      enabled: false
+      command: REQUIRED

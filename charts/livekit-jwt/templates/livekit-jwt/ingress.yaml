@@ -1,0 +1,27 @@
+{{- if .Values.livekitJwt.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "livekitJwt.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "livekitJwt.labels" . | nindent 4 }}
+  {{- if .Values.livekitJwt.ingress.annotations }}
+  annotations: {{ .Values.livekitJwt.ingress.annotations | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  rules:
+    - host: {{ .Values.livekitJwt.ingress.hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "livekitJwt.basename" . }}
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - {{ .Values.livekitJwt.ingress.hostname | quote }}
+      secretName: {{ printf "%s-tls" .Values.livekitJwt.ingress.hostname }}
+{{- end }}
