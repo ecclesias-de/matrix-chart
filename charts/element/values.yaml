@@ -4,7 +4,8 @@ element:
     default_server_config:
       m.homeserver:
         base_url: "https://{{ .Values.synapse.ingress.hostname }}/"
-    nginx_vhost_overwrite: ""
+
+  nginx_vhost_overwrite: ""
 
   deployment:
     imagePullSecrets: []
