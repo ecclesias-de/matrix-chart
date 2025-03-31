@@ -216,9 +216,12 @@ corporal:
         storage: 1Mi
     storageClassName:
 
+pullSecret:
+  data: #optional
+
 metadata:
   name:
-  team:
+  team: #required
 
 debug:
   diagnoseMode:
