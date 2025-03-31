@@ -7,3 +7,7 @@ COPY charts/matrix/files/entrypoint.py /entrypoint.py
 RUN curl \
     https://raw.githubusercontent.com/devture/matrix-synapse-shared-secret-auth/2.0.3/shared_secret_authenticator.py \
     -o $(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/shared_secret_authenticator.py
+
+RUN curl \
+    https://raw.githubusercontent.com/PeerD/matrix-synapse-rest-auth/refs/tags/v0.1.2/rest_auth_provider.py \
+    -o $(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/rest_auth_provider.py
