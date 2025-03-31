@@ -216,6 +216,10 @@ corporal:
         storage: 1Mi
     storageClassName:
 
+metadata:
+  name:
+  team:
+
 debug:
   diagnoseMode:
     synapse:

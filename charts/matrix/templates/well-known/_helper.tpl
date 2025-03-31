@@ -13,7 +13,7 @@ labels: {{ include "wellknown.labels" . | nindent 4 }}
 {{- define "wellknown.labels" -}}
 {{ include "labels" . }}
 app.kubernetes.io/component: well-known
-app.kubernetes.io/app: nginx
+app.metaways.net/software: nginx
 app.kubernetes.io/version: {{ .Values.wellknown.deployment.image.tag | quote }}
 {{- end -}}
 

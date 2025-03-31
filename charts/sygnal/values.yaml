@@ -132,6 +132,10 @@ ingress:
 
 inject_entrypoint: false
 
+metadata:
+  team:
+  name:
+
 debug:
   diagnoseMode:
     enabled: false
