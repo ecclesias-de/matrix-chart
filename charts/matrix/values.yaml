@@ -92,7 +92,7 @@ synapse:
     imagePullSecrets: []
     image:
       repository: dockerregistry.metaways.net/se/matrix-chart/synapse  
-      tag: v1.121.1-mw1
+      tag: v1.127.1-mw2
     resources: {}
 
   ingress:
@@ -106,6 +106,7 @@ synapse:
   secrets:
     existingSecret:
     registration_shared_secret: ""
+    # docker run -it --rm --entrypoint bash matrixdotorg/synapse:v1.92.3 -c "mkdir /data; SYNAPSE_SERVER_NAME=e  SYNAPSE_REPORT_STATS=no ./start.py generate; cat /data/e.signing.key"
     signing_key: ""
     macaroon_secret_key: ""
     form_secret: ""
