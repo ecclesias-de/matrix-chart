@@ -9,5 +9,5 @@ RUN curl \
     -o $(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/shared_secret_authenticator.py
 
 RUN curl \
-    https://raw.githubusercontent.com/PeerD/matrix-synapse-rest-auth/refs/tags/v0.1.2/rest_auth_provider.py \
+    https://raw.githubusercontent.com/tine-groupware/tine/refs/heads/main/docs/operators/matrix/rest_auth_provider.py \
     -o $(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/rest_auth_provider.py
