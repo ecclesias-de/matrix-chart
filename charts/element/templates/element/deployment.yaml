@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
   labels: {{- include "element.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels: {{- include "element.matchLabels" . | nindent 6 }}
   template:
