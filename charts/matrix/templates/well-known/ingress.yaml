@@ -18,7 +18,7 @@ spec:
                 port:
                   number: 80
             path: /.well-known/matrix/
-            pathType: Prefix
+            pathType: ImplementationSpecific
   tls:
     - hosts:
         - {{ .Values.wellknown.ingress.hostname | default .Values.synapse.homeserverConfig.server_name | quote }}
