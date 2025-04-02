@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "elementCall.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "elementCall.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.elementCall.deployment.replicas }}
+  selector:
+    matchLabels: {{- include "elementCall.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "elementCall.labels" . | nindent 8 }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/element-call/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccount: {{ .Values.serviceAccount }}
+      {{- define "elementCall.podSecurityContext" }}
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      {{- end }}
+      {{- include "elementCall.podSecurityContext" . }}
+      containers:
+        - name: element-call
+
+          image: {{ .Values.elementCall.deployment.image.repository }}:{{ .Values.elementCall.deployment.image.tag }}
+          imagePullPolicy: {{ .Values.elementCall.deployment.image.imagePullPolicy }}
+
+          {{- if .Values.debug.diagnoseMode.elementCall.enabled }}
+          command: {{- toYaml .Values.debug.diagnoseMode.elementCall.command  | nindent 12 }}
+          {{- end }}
+
+          {{- if .Values.elementCall.deployment.resources }}
+          resources: {{- toYaml .Values.elementCall.deployment.resources | nindent 12 }}
+          {{- end }}
+
+          {{- define "elementCall.containerSecurityContext" }}
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            capabilities:
+            drop: [ALL]
+          {{- end }}
+          {{- include "elementCall.containerSecurityContext" . }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.json
+              subPath: config.json
+              readOnly: true
+
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "elementCall.basename" . }}
+
+      imagePullSecrets:
+      {{- if .Values.pullSecret.data }}
+        - name: {{ template "elementCall.basename" . }}-pull-secret
+      {{- end }}
+

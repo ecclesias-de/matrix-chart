@@ -1,0 +1,38 @@
+{{- define "elementCall.ingres.rules" -}}
+- host: {{ .hostname }}
+  http:
+    paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .service }}
+            port:
+              number: 80
+{{- end -}}
+
+{{- if .Values.elementCall.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "elementCall.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "elementCall.labels" . | nindent 4 }}
+  {{- if .Values.elementCall.ingress.annotations }}
+  annotations: {{ .Values.elementCall.ingress.annotations | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  rules:
+    {{ include "elementCall.ingres.rules" (dict "hostname" ( required "elementCall.ingress.hostname is required" .Values.elementCall.ingress.hostname) "service" (include "elementCall.basename" .)) | nindent 4 }}
+  {{- $root := .}}
+  {{- range $hostname := .Values.elementCall.ingress.extraHostnames }}
+    {{ include "elementCall.ingres.rules" (dict "hostname" $hostname "service" (include "elementCall.basename" $root)) | nindent 4 }}
+  {{- end }}
+  tls:
+    - hosts:
+        - {{ .Values.elementCall.ingress.hostname }}
+      {{- range $hostname := .Values.elementCall.ingress.extraHostnames }}
+        - {{ $hostname }}
+      {{- end }}
+      secretName: {{ printf "%s-tls" .Values.elementCall.ingress.hostname }}
+{{- end }}

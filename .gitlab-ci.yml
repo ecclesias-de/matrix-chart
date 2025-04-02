@@ -25,6 +25,10 @@ include:
     inputs:
       name: livekit-jwt
       tag_name_postfix: ""
+  - component: $CI_SERVER_FQDN/gitlabci-components/helm-build/build@1.1.0
+    inputs:
+      name: element-call
+      tag_name_postfix: ""
 
 build-synapse-image:
   stage: package

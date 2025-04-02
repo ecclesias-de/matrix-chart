@@ -1,0 +1,45 @@
+elementCall:
+  config:
+    default_server_config:
+      m.homeserver:
+        base_url: #REQUIRED
+        server_name: #REQUIRED
+
+    livekit:
+      livekit_service_url: #REQUIRED
+
+    features:
+      feature_use_device_session_member_events: true
+
+  deployment:
+    replicas: 2
+    image:
+      repository: ghcr.io/element-hq/element-call
+      tag: v0.9.0
+      imagePullPolicy: IfNotPresent
+    resources:
+      limits:
+        memory: 50Mi
+      requests:
+        cpu: 10m
+        memory: 50Mi
+
+  ingress:
+    enabled: true
+    hostname: #REQUIRED
+    extraHostnames:
+    annotations: 
+      kubernetes.io/tls-acme: "true"
+
+metadata:
+  team: #REQUIRED
+  name:
+
+pullSecret:
+  data: #OPTIONAL
+
+debug:
+  diagnoseMode:
+    elementCall:
+      enabled: false
+      command: tail -f /dev/null
