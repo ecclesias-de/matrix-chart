@@ -35,6 +35,9 @@ spec:
         {{- if .Values.element.deployment.resources }}
         resources: {{- toYaml .Values.element.deployment.resources | nindent 12 }}
         {{- end }}
+        env:
+        - name: ELEMENT_WEB_PORT
+          value: "8080"
         ports:
         - name: http
           containerPort: 8080
