@@ -29,6 +29,10 @@ include:
     inputs:
       name: element-call
       tag_name_postfix: ""
+  - component: $CI_SERVER_FQDN/gitlabci-components/helm-build/build@1.1.0
+    inputs:
+      name: ma1sd
+      tag_name_postfix: ""
   - component: $CI_SERVER_FQDN/gitlabci-components/image-build/build@1.0.0
     inputs:
       name: ma1sd
