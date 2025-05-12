@@ -99,7 +99,10 @@ synapse:
     annotations:
       kubernetes.io/tls-acme: "true"
     enabled: true
-    hostname: 
+    hostname:
+    endpoints:
+      user_directory:
+        disabled: false
 
   inject_entrypoint: true
 
@@ -347,5 +350,4 @@ synapseEndpoints:
     # Presence requests
     - /_matrix/client/(api/v1|r0|v3|unstable)/presence/
 
-    # User directory search requests
-    - /_matrix/client/(r0|v3|unstable)/user_directory/search$
+    # User directory search requests is define in the ingress.yaml

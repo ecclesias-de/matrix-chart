@@ -25,6 +25,15 @@ spec:
                 port:
                   number: 80
           {{- end }}
+          {{- if not .Values.synapse.ingress.endpoints.user_directory.disabled }}
+          - path: /_matrix/client/(r0|v3|unstable)/user_directory/search$
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "synapse.basename" $global }}-generic
+                port:
+                  number: 80
+          {{- end }}
           - path: /_matrix/
             pathType: Prefix
             backend:
