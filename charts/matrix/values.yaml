@@ -142,13 +142,6 @@ wellknown:
     m.homeserver:
       base_url: "https://{{ .Values.synapse.ingress.hostname }}/"
 
-  deployment:
-    imagePullSecrets: []
-    image:
-      repository: nginxinc/nginx-unprivileged
-      tag: 1.27.3-bookworm
-    resources: {}
-
   ingress:
     annotations:
       kubernetes.io/tls-acme: "true"
@@ -220,6 +213,23 @@ corporal:
         storage: 1Mi
     storageClassName:
 
+nginx:
+  enabled: true
+
+  deployment:
+    imagePullSecrets: []
+    image:
+      repository: nginxinc/nginx-unprivileged
+      tag: 1.27.3-bookworm
+    resources: {}
+
+  ingress:
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    enabled: true
+
+  ma1sd_service: null
+
 pullSecret:
   data: #optional
 
@@ -247,6 +257,12 @@ debug:
         - tail
         - -f
         - /dev/null
+    nginx:
+      enabled: false
+      command:
+        - tail
+        - -f
+        - /dev/null
     corporal:
       enabled: false
       command:
@@ -258,96 +274,95 @@ debug:
       enabled: true
     wellknown:
       enabled: true
+    nginx:
+      enabled: true
     corporal:
       enabled: true
 
 # synapse nginx locations regex
-# locations need to start with an /. nginx will prepend a ^
+# source https://element-hq.github.io/synapse/latest/workers.html?highlight=worker#available-worker-applications
 synapseEndpoints:
-  generic:
+  generic: |
     # Sync requests
-    - /_matrix/client/(r0|v3)/sync$
-    - /_matrix/client/(api/v1|r0|v3)/events$
-    - /_matrix/client/(api/v1|r0|v3)/initialSync$
-    - /_matrix/client/(api/v1|r0|v3)/rooms/[^/]+/initialSync$
+    ^/_matrix/client/(r0|v3)/sync$
+    ^/_matrix/client/(api/v1|r0|v3)/events$
+    ^/_matrix/client/(api/v1|r0|v3)/initialSync$
+    ^/_matrix/client/(api/v1|r0|v3)/rooms/[^/]+/initialSync$
 
     # Federation requests
-    - /_matrix/federation/v1/event/
-    - /_matrix/federation/v1/state/
-    - /_matrix/federation/v1/state_ids/
-    - /_matrix/federation/v1/backfill/
-    - /_matrix/federation/v1/get_missing_events/
-    - /_matrix/federation/v1/publicRooms
-    - /_matrix/federation/v1/query/
-    - /_matrix/federation/v1/make_join/
-    - /_matrix/federation/v1/make_leave/
-    - /_matrix/federation/(v1|v2)/send_join/
-    - /_matrix/federation/(v1|v2)/send_leave/
-    - /_matrix/federation/(v1|v2)/invite/
-    - /_matrix/federation/v1/event_auth/
-    - /_matrix/federation/v1/timestamp_to_event/
-    - /_matrix/federation/v1/exchange_third_party_invite/
-    - /_matrix/federation/v1/user/devices/
-    - /_matrix/key/v2/query
-    - /_matrix/federation/v1/hierarchy/
+    ^/_matrix/federation/v1/event/
+    ^/_matrix/federation/v1/state/
+    ^/_matrix/federation/v1/state_ids/
+    ^/_matrix/federation/v1/backfill/
+    ^/_matrix/federation/v1/get_missing_events/
+    ^/_matrix/federation/v1/publicRooms
+    ^/_matrix/federation/v1/query/
+    ^/_matrix/federation/v1/make_join/
+    ^/_matrix/federation/v1/make_leave/
+    ^/_matrix/federation/(v1|v2)/send_join/
+    ^/_matrix/federation/(v1|v2)/send_leave/
+    ^/_matrix/federation/(v1|v2)/invite/
+    ^/_matrix/federation/v1/event_auth/
+    ^/_matrix/federation/v1/timestamp_to_event/
+    ^/_matrix/federation/v1/exchange_third_party_invite/
+    ^/_matrix/federation/v1/user/devices/
+    ^/_matrix/key/v2/query
+    ^/_matrix/federation/v1/hierarchy/
 
     # Inbound federation transaction request
-    - /_matrix/federation/v1/send/
-
+    ^/_matrix/federation/v1/send/
+  generic_client:
     # Client API requests
-    - /_matrix/client/(api/v1|r0|v3|unstable)/createRoom$
-    - /_matrix/client/(api/v1|r0|v3|unstable)/publicRooms$
-    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/joined_members$
-    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/context/.*$
-    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/members$
-    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/state$
-    - /_matrix/client/v1/rooms/.*/hierarchy$
-    - /_matrix/client/(v1|unstable)/rooms/.*/relations/
-    - /_matrix/client/v1/rooms/.*/threads$
-    - /_matrix/client/unstable/im.nheko.summary/rooms/.*/summary$
-    - /_matrix/client/(r0|v3|unstable)/account/3pid$
-    - /_matrix/client/(r0|v3|unstable)/account/whoami$
-    - /_matrix/client/(r0|v3|unstable)/devices$
-    - /_matrix/client/versions$
-    - /_matrix/client/(api/v1|r0|v3|unstable)/voip/turnServer$
-    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/event/
-    - /_matrix/client/(api/v1|r0|v3|unstable)/joined_rooms$
-    - /_matrix/client/v1/rooms/.*/timestamp_to_event$
-    - /_matrix/client/(api/v1|r0|v3|unstable/.*)/rooms/.*/aliases
-    # - /_matrix/client/(api/v1|r0|v3|unstable)/search$
-    - /_matrix/client/(r0|v3|unstable)/user/.*/filter(/|$)
-    - /_matrix/client/(api/v1|r0|v3|unstable)/directory/room/.*$
-    - /_matrix/client/(r0|v3|unstable)/capabilities$
-    - /_matrix/client/(r0|v3|unstable)/notifications$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/createRoom$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/publicRooms$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/joined_members$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/context/.*$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/members$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/state$
+    - ^/_matrix/client/v1/rooms/.*/hierarchy$
+    - ^/_matrix/client/(v1|unstable)/rooms/.*/relations/
+    - ^/_matrix/client/v1/rooms/.*/threads$
+    - ^/_matrix/client/unstable/im.nheko.summary/rooms/.*/summary$
+    - ^/_matrix/client/(r0|v3|unstable)/account/3pid$
+    - ^/_matrix/client/(r0|v3|unstable)/account/whoami$
+    - ^/_matrix/client/(r0|v3|unstable)/devices$
+    - ^/_matrix/client/versions$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/voip/turnServer$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/event/
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/joined_rooms$
+    - ^/_matrix/client/v1/rooms/.*/timestamp_to_event$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable/.*)/rooms/.*/aliases
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/search$
+    - ^/_matrix/client/(r0|v3|unstable)/user/.*/filter(/|$)
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/directory/room/.*$
+    - ^/_matrix/client/(r0|v3|unstable)/capabilities$
+    - ^/_matrix/client/(r0|v3|unstable)/notifications$
 
     # Encryption requests
-    - /_matrix/client/(r0|v3|unstable)/keys/query$
-    - /_matrix/client/(r0|v3|unstable)/keys/changes$
-    - /_matrix/client/(r0|v3|unstable)/keys/claim$
-    - /_matrix/client/(r0|v3|unstable)/room_keys/
-    - /_matrix/client/(r0|v3|unstable)/keys/upload/
+    - ^/_matrix/client/(r0|v3|unstable)/keys/query$
+    - ^/_matrix/client/(r0|v3|unstable)/keys/changes$
+    - ^/_matrix/client/(r0|v3|unstable)/keys/claim$
+    - ^/_matrix/client/(r0|v3|unstable)/room_keys/
+    - ^/_matrix/client/(r0|v3|unstable)/keys/upload/
 
     # Registration/login requests
-    - /_matrix/client/(api/v1|r0|v3|unstable)/login$
-    - /_matrix/client/(r0|v3|unstable)/register$
-    - /_matrix/client/(r0|v3|unstable)/register/available$
-    - /_matrix/client/v1/register/m.login.registration_token/validity$
-    - /_matrix/client/(r0|v3|unstable)/password_policy$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/login$
+    - ^/_matrix/client/(r0|v3|unstable)/register$
+    - ^/_matrix/client/(r0|v3|unstable)/register/available$
+    - ^/_matrix/client/v1/register/m.login.registration_token/validity$
+    - ^/_matrix/client/(r0|v3|unstable)/password_policy$
 
     # Event sending requests
-    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/redact
-    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/send
-    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/state/
-    - /_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/(join|invite|leave|ban|unban|kick)$
-    - /_matrix/client/(api/v1|r0|v3|unstable)/join/
-    - /_matrix/client/(api/v1|r0|v3|unstable)/knock/
-    - /_matrix/client/(api/v1|r0|v3|unstable)/profile/
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/redact
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/send
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/state/
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/rooms/.*/(join|invite|leave|ban|unban|kick)$
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/join/
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/knock/
+    - ^/_matrix/client/(api/v1|r0|v3|unstable)/profile/
 
-    # Account data requests
-    - /_matrix/client/(r0|v3|unstable)/.*/tags
-    - /_matrix/client/(r0|v3|unstable)/.*/account_data
-
-    # Presence requests
-    - /_matrix/client/(api/v1|r0|v3|unstable)/presence/
-
-    # User directory search requests is define in the ingress.yaml
+    # User directory search requests
+    # search is specified under user_directory
+    # - ^/_matrix/client/(r0|v3|unstable)/user_directory/search$
+  user_directory:
+    - ^/_matrix/client/(r0|v3|unstable)/user_directory/search$

@@ -1,45 +1,46 @@
-{{- if .Values.wellknown.enabled }}
+{{- if .Values.nginx.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "wellknown.basename" . }}
+  name: {{ template "nginx.basename" . }}
   namespace: {{ .Release.Namespace | quote }}
-  labels: {{- include "wellknown.labels" . | nindent 4 }}
+  labels: {{- include "nginx.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: 2
   selector:
-    matchLabels: {{- include "wellknown.matchLabels" . | nindent 6 }}
+    matchLabels: {{- include "nginx.matchLabels" . | nindent 6 }}
   template:
     metadata:
-      labels: {{- include "wellknown.labels" . | nindent 8 }}
+      labels: {{- include "nginx.labels" . | nindent 8 }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/well-known/configmap.yaml") . | sha256sum }}
+        checksum/config-nginx: {{ include (print $.Template.BasePath "/nginx/configmap.yaml") . | sha256sum }}
+        checksum/config-wellknown: {{ include (print $.Template.BasePath "/well-known/configmap.yaml") . | sha256sum }}
     spec:
       securityContext:
         runAsUser: 101
         runAsGroup: 101
         seccompProfile:
           type: RuntimeDefault
-      {{- if .Values.wellknown.deployment.imagePullSecrets }}
+      {{- if .Values.nginx.deployment.imagePullSecrets }}
       imagePullSecrets:
-      {{- range .Values.wellknown.deployment.imagePullSecrets}}
+      {{- range .Values.nginx.deployment.imagePullSecrets}}
       - {{ toYaml . }}
       {{- end }}
       {{- end }}
       containers:
       - name: nginx
-        image: {{ .Values.wellknown.deployment.image.repository }}:{{ .Values.wellknown.deployment.image.tag }}
+        image: {{ .Values.nginx.deployment.image.repository }}:{{ .Values.nginx.deployment.image.tag }}
         imagePullPolicy: IfNotPresent
-        {{- if .Values.debug.diagnoseMode.wellknown.enabled}}
-        command: {{- toYaml .Values.debug.diagnoseMode.wellknown.command  | nindent 12 }}
+        {{- if .Values.debug.diagnoseMode.nginx.enabled}}
+        command: {{- toYaml .Values.debug.diagnoseMode.nginx.command  | nindent 12 }}
         {{- end}}
-        {{- if .Values.wellknown.deployment.resources }}
-        resources: {{- toYaml .Values.wellknown.deployment.resources | nindent 12 }}
+        {{- if .Values.nginx.deployment.resources }}
+        resources: {{- toYaml .Values.nginx.deployment.resources | nindent 12 }}
         {{- end }}
         ports:
         - name: http
           containerPort: 8080
-        {{- if .Values.debug.securityContext.wellknown.enabled }}
+        {{- if .Values.debug.securityContext.nginx.enabled }}
         securityContext:
           runAsNonRoot: true
           readOnlyRootFilesystem: false
@@ -51,17 +52,20 @@ spec:
         - name: config
           mountPath: /etc/nginx/conf.d/default.conf
           subPath: default.conf
-          readOnly: true
-        - name: config
+          readOnly: false
+        - name: wellknown
           mountPath: /usr/share/nginx/html/.well-known/matrix/server
           subPath: server
           readOnly: true
-        - name: config
+        - name: wellknown
           mountPath: /usr/share/nginx/html/.well-known/matrix/client
           subPath: client
           readOnly: true
       volumes:
       - name: config
+        configMap:
+          name: {{ template "nginx.basename" . }}
+      - name: wellknown
         configMap:
           name: {{ template "wellknown.basename" . }}
 {{- end }}

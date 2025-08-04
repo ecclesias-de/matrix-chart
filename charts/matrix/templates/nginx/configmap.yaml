@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nginx.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "nginx.labels" . | nindent 4 }}
+data:
+  default.conf: |
+    upstream synapse_generic {
+      server {{ include "synapse.basename" . }}-generic;
+    }
+
+    upstream synapse_generic_client {
+      # Generic client endpoint need to be proxied through corporal, for all corporal features to work. Corporal
+      # is not ha and send all request to synapse service and not the worker. The second problem could be solved
+      # by proxying request from corporal through nginx again. 
+      # For now we will not proxy generic client request through corporal to gain high fault tolerance to pod
+      # failures.
+      server {{ include "synapse.basename" . }}-generic;
+    }
+
+    upstream synapse_client {
+      {{- if .Values.corporal.enabled}}
+      server client-{{ include "corporal.basename" . }};
+      {{- else -}}
+      server {{ include "synapse.basename" . }};
+      {{- end}}
+    }
+
+    upstream synapse {
+      server {{ include "synapse.basename" . }};
+    }
+
+    {{- if .Values.nginx.ma1sd_service }}
+    upstream ma1sd {
+      server {{ .Values.nginx.ma1sd_service }};
+    }
+    {{- end }}
+
+    map $http_x_forwarded_proto $real_scheme {
+      default $http_x_forwarded_proto;
+      ''      $scheme;
+    }
+
+    log_format access_log '$remote_addr [$time_local] "$request" status: $status $upstream_addr';
+
+    server {
+      listen 8080 default_server;
+      server_name _;
+
+      
+      error_log /dev/stderr warn;
+      access_log /dev/stdout access_log;
+
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $real_scheme;
+      proxy_set_header Host $host;
+      proxy_read_timeout 600s;
+      client_max_body_size 10M;
+
+      {{- $global := . }}
+      {{- range $endpoint := (split "\n" .Values.synapseEndpoints.generic) }}
+      {{- if and (not (hasPrefix "#" $endpoint)) (not (eq $endpoint "")) }}
+      location ~ {{ $endpoint }} {
+        proxy_pass http://synapse_generic;
+      }
+      {{- end }}
+      {{- end }}
+
+      {{- $global := . }}
+      {{- range $endpoint := .Values.synapseEndpoints.generic_client }}
+      location ~ {{ $endpoint }} {
+        proxy_pass http://synapse_generic_client;
+      }
+      {{- end }}
+
+      {{- $global := . }}
+      {{- range $endpoint := .Values.synapseEndpoints.user_directory }}
+      location ~ {{ $endpoint }} {
+        {{- if $global.Values.nginx.ma1sd_service }}
+        rewrite .* /_matrix/client/r0/user_directory/search break;
+        proxy_pass http://ma1sd;
+        {{- else }}
+        proxy_pass http://synapse_generic_client;
+        {{- end }}
+      }
+      {{- end }}
+
+      location ~ ^/.well-known/matrix/(client|server)$ {
+        add_header 'Access-Control-Allow-Origin' '*';
+
+        root   /usr/share/nginx/html;
+      }
+
+      location /_matrix/client/ {
+        proxy_pass http://synapse_client;
+      }
+
+      location / {
+        proxy_pass http://synapse;
+      }
+    }

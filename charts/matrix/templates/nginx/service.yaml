@@ -1,8 +1,8 @@
-{{- if .Values.wellknown.enabled }}
+{{- if .Values.nginx.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "wellknown.basename" . }}
+  name: {{ include "nginx.basename" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels: {{- include "labels" . | nindent 4 }}
 spec:

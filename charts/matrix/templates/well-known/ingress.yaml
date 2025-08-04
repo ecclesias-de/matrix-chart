@@ -14,7 +14,7 @@ spec:
         paths:
           - backend:
               service:
-                name: {{ include "wellknown.basename" . }}
+                name: {{ include "nginx.basename" . }}
                 port:
                   number: 80
             path: /.well-known/matrix/

@@ -1,0 +1,27 @@
+{{- if .Values.nginx.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "nginx.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "nginx.labels" . | nindent 4 }}
+  {{- if .Values.nginx.ingress.annotations }}
+  annotations: {{ .Values.nginx.ingress.annotations | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  rules:
+    - host: {{ .Values.synapse.ingress.hostname }}
+      http:
+        paths:
+          - path: /_matrix/
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "nginx.basename" . }}
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - {{ .Values.nginx.ingress.hostname | default .Values.synapse.ingress.hostname | quote }}
+      secretName: {{ printf "%s-tls" (.Values.nginx.ingress.hostname | default .Values.synapse.ingress.hostname) }}
+{{- end }}

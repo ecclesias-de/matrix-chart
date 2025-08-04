@@ -7,52 +7,17 @@ metadata:
   labels: {{- include "synapse.labels" . | nindent 4 }}
   {{- if .Values.synapse.ingress.annotations }}
   annotations: {{ .Values.synapse.ingress.annotations | toYaml | nindent 4 }}
-    nginx.ingress.kubernetes.io/use-regex: "true"
   {{- end }}
 spec:
   rules:
     - host: {{ .Values.synapse.ingress.hostname }}
       http:
         paths:
-          # endpoints which can be handled by synapses main process or a generic worker
-          {{- $global := . }}
-          {{- range $endpoint := .Values.synapseEndpoints.generic }}
-          - path: {{ $endpoint }}
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: {{ include "synapse.basename" $global }}-generic
-                port:
-                  number: 80
-          {{- end }}
-          {{- if not .Values.synapse.ingress.endpoints.user_directory.disabled }}
-          - path: /_matrix/client/(r0|v3|unstable)/user_directory/search$
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: {{ include "synapse.basename" $global }}-generic
-                port:
-                  number: 80
-          {{- end }}
-          - path: /_matrix/
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "synapse.basename" . }}
-                port:
-                  number: 80
           - path: /_synapse/
             pathType: Prefix
             backend:
               service:
                 name: {{ include "synapse.basename" . }}
-                port:
-                  number: 80
-          - path: /_matrix/client/
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ template "synapse.client_api_service" . }}
                 port:
                   number: 80
   tls:

@@ -48,16 +48,3 @@ secretName: {{ template "synapse.secret" . }}
 {{ include "synapse.basename" . }}
 {{- end -}}
 {{- end -}}
-
-{{/*
-Service providing client api. If corporal is enabled /_matrix/client is proxied through corporal 
-service:
-    name:: {{ template "synapse.client_api_service" . }}
-*/}}
-{{- define "synapse.client_api_service" -}}
-{{- if .Values.corporal.enabled -}}
-client-{{ include "corporal.basename" . }}
-{{- else -}}
-{{ include "synapse.basename" . }}
-{{- end -}}
-{{- end -}}
