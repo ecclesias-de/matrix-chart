@@ -1,11 +1,11 @@
 element:
-  # values inside these config are rended by the templateing engin. See readme for usage and caveats.
+  # values inside these config are rended by the templating engin. See readme for usage and caveats.
   config:
     default_server_config:
       m.homeserver:
         base_url: "https://{{ .Values.synapse.ingress.hostname }}/"
 
-  nginx_vhost_overwrite: ""
+  extraFrameAncestors: []
 
   deployment:
     imagePullSecrets: []
