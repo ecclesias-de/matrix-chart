@@ -22,7 +22,7 @@ element:
 
 metadata:
   team:
-  name:
+  name: element
 
 debug:
   diagnoseMode:
