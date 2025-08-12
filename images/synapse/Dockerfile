@@ -1,5 +1,5 @@
-ARG SYNAPSE_VERSION
-FROM matrixdotorg/synapse:${SYNAPSE_VERSION}
+ARG APP_VERSION
+FROM matrixdotorg/synapse:${APP_VERSION}
 
 COPY charts/matrix/files/entrypoint.py /entrypoint.py
 

@@ -1,6 +1,6 @@
 FROM openjdk:8-jre-alpine
 
-ARG APP_VERSION=2.5.0
+ARG APP_VERSION
 
 RUN apk update && apk upgrade --available && apk add bash && rm -rf /var/lib/apk/* /var/cache/apk/*
 
