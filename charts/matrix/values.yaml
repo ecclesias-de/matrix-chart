@@ -91,7 +91,7 @@ synapse:
   deployment:
     imagePullSecrets: []
     image:
-      repository: dockerregistry.metaways.net/se/matrix-chart/synapse  
+      repository: registry.rz1.metaways.net/devops/synapse
       tag: v1.135.2-mw1
     resources: {}
 
