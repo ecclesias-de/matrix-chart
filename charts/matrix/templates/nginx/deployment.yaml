@@ -53,6 +53,7 @@ spec:
           mountPath: /etc/nginx/conf.d/default.conf
           subPath: default.conf
           readOnly: false
+        {{- if .Values.wellknown.enabled }}
         - name: wellknown
           mountPath: /usr/share/nginx/html/.well-known/matrix/server
           subPath: server
@@ -61,11 +62,14 @@ spec:
           mountPath: /usr/share/nginx/html/.well-known/matrix/client
           subPath: client
           readOnly: true
+        {{- end }}
       volumes:
       - name: config
         configMap:
           name: {{ template "nginx.basename" . }}
+      {{- if .Values.wellknown.enabled }}
       - name: wellknown
         configMap:
           name: {{ template "wellknown.basename" . }}
+      {{- end }}
 {{- end }}
