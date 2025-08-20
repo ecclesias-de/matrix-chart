@@ -5,5 +5,5 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
   labels: {{- include "ma1sd.labels" . | nindent 4 }}
 data:
-  ma1sd.yaml: |
+  ma1sd.yaml.tmpl: |
     {{- tpl ( .Values.ma1sd.config | toYaml ) . | nindent 4 }}

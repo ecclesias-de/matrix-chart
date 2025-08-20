@@ -30,8 +30,9 @@ ma1sd:
     imagePullSecrets: []
     image:
       repository: registry.rz1.metaways.net/devops/ma1sd
-      tag: 2.5.0-mw1
+      tag: 2.5.0-mw2-rc4
     resources: {}
+    extraEnvFrom: null
 
   ingress:
     annotations:

@@ -15,8 +15,8 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/ma1sd/configmap.yaml") . | sha256sum }}
     spec:
       securityContext:
-        runAsUser: 0
-        runAsGroup: 0
+        runAsUser: 1000
+        runAsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       {{- if .Values.ma1sd.deployment.imagePullSecrets }}
@@ -35,23 +35,38 @@ spec:
         {{- if .Values.ma1sd.deployment.resources }}
         resources: {{- toYaml .Values.ma1sd.deployment.resources | nindent 12 }}
         {{- end }}
+        envFrom:
+        {{- range .Values.ma1sd.deployment.extraEnvFrom}}
+        - {{ toYaml . | nindent 10}}
+        {{- end }}
         ports:
         - name: http
           containerPort: 8090
         {{- if .Values.debug.securityContext.ma1sd.enabled }}
         securityContext:
-          runAsNonRoot: false
-          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities:
             drop: [ALL]
         {{- end }}
         volumeMounts:
+        - name: run
+          mountPath: /etc/ma1sd
+          subPath: etc/ma1sd
+        - name: run
+          mountPath: /var/ma1sd
+          subPath: var/ma1sd
+        - name: run
+          mountPath: /tmp
+          subPath: tmp
         - name: config
-          mountPath: /etc/ma1sd/ma1sd.yaml
-          subPath: ma1sd.yaml
+          mountPath: /etc/ma1sd/ma1sd.yaml.tmpl
+          subPath: ma1sd.yaml.tmpl
           readOnly: true
       volumes:
       - name: config
         configMap:
           name: {{ template "ma1sd.basename" . }}
+      - name: run
+        emptyDir: {}
