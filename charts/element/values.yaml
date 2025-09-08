@@ -17,8 +17,11 @@ element:
   ingress:
     annotations:
       kubernetes.io/tls-acme: "true"
+    labels:
     enabled: true
     hostname: ""
+    tls:
+      hostname:
 
 metadata:
   team:
