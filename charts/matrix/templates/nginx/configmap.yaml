@@ -86,6 +86,10 @@ data:
       }
       {{- end }}
 
+      location ~ ^/_matrix/client/v3/capabilities$ {
+        root   /usr/share/nginx/html;
+      }
+
       location ~ ^/.well-known/matrix/(client|server)$ {
         add_header 'Access-Control-Allow-Origin' '*';
 
@@ -100,3 +104,6 @@ data:
         proxy_pass http://synapse;
       }
     }
+
+  capabilities: |
+    {"capabilities":{"m.room_versions":{"default":"10","available":{"1":"stable","2":"stable","3":"stable","4":"stable","5":"stable","6":"stable","7":"stable","8":"stable","9":"stable","10":"stable","11":"stable","12":"stable","org.matrix.msc3757.10":"unstable","org.matrix.msc3757.11":"unstable","org.matrix.hydra.11":"unstable"},"org.matrix.msc3244.room_capabilities":{"knock":{"preferred":"7","support":["7","8","9","10","11","12","org.matrix.msc3757.10","org.matrix.msc3757.11","org.matrix.hydra.11"]},"restricted":{"preferred":"9","support":["8","9","10","11","12","org.matrix.msc3757.10","org.matrix.msc3757.11","org.matrix.hydra.11"]}}},"m.change_password":{"enabled":false},"m.set_displayname":{"enabled":true},"m.set_avatar_url":{"enabled":true},"m.3pid_changes":{"enabled":true},"m.get_login_token":{"enabled":false},"m.profile_fields":{"enabled":true}}}
