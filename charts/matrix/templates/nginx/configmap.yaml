@@ -59,6 +59,7 @@ data:
       client_max_body_size 10M;
 
       location ~ ^/_matrix/client/v3/capabilities$ {
+        add_header 'Access-Control-Allow-Origin' '*';
         root   /usr/share/nginx/html;
       }
 
