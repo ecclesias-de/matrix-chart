@@ -27,6 +27,7 @@ spec:
         fsGroup: 2000
         seccompProfile:
           type: RuntimeDefault
+        fsGroupChangePolicy: OnRootMismatch
       {{- if .Values.synapse.deployment.imagePullSecrets }}
       imagePullSecrets:
       {{- range .Values.synapse.deployment.imagePullSecrets}}
