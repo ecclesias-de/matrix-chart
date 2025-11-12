@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "ma1sd.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "ma1sd.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {{- include "ma1sd.matchLabels" . | nindent 6 }}
