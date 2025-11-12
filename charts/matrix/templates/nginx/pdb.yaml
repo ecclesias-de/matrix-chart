@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "nginx.basename" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "nginx.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {{- include "nginx.matchLabels" . | nindent 6 }}
