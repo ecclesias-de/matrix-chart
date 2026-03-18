@@ -24,8 +24,8 @@ synapse:
       args:
         # user: set by entrypoint.py
         # password: set by entrypoint.py
-        dbname: # required for postgres
-        host: # required for postgres
+        # dbname: # required for postgres
+        # host: # required for postgres (set by entrypoint.py)
         port: 5432
         cp_min: 5
         cp_max: 10
