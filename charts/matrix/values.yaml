@@ -26,9 +26,7 @@ synapse:
         # password: set by entrypoint.py
         # dbname: # required for postgres
         # host: # required for postgres (set by entrypoint.py)
-        port: 5432
-        cp_min: 5
-        cp_max: 10
+
     redis:
       enabled: true
       port: 6379
@@ -141,6 +139,10 @@ wellknown:
   client:
     m.homeserver:
       base_url: "https://{{ .Values.synapse.ingress.hostname }}/"
+    io.element.e2ee:
+        default: false
+        force_disable: true
+
 
   ingress:
     annotations:

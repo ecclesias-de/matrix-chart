@@ -9,12 +9,18 @@ def template_homeserver_config():
 
     if config["database"]["name"] == "psycopg2":
         config["database"]["args"]["host"] = os.environ["DATABASE_HOST"]
-        # config["database"]["args"]["port"] = os.environ["DATABASE_PORT"]
+        config["database"]["args"]["port"] = os.environ.get("DATABASE_PORT", "5432")
         # config["database"]["args"]["dbname"] = os.environ["DATABASE_NAME"]
         config["database"]["args"]["user"] = os.environ["DATABASE_USER"]
 
         with open("/etc/synapse/database_password") as f:
             config["database"]["args"]["password"] = f.read().strip()
+
+        if "cp_min" not in  config["database"]["args"]:
+            config["database"]["args"]["cp_min"] = os.environ.get("DATABASE_CP_MIN", "5")
+
+        if "cp_cp_cp_maxmaxmin" not in  config["database"]["args"]:
+            config["database"]["args"]["cp_max"] = os.environ.get("DATABASE_CP_MAX", "10")
 
     if config["redis"]["enabled"] == True:
         config["redis"]["host"] = os.environ["REDIS_HOST"]
