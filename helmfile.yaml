@@ -3,12 +3,7 @@ environments:
     values:
       - deploymentName: {{ env "DEPLOYMENT_NAME" | default "dev" }}
         baseDomain: {{ env "BASE_DOMAIN" | default "localhost" }}
-  appreview:
-    values:
-      - deploymentName: appreview
-        baseDomain: matrix.mws-hosting.net
         
-
 helmDefaults:
   wait: true
   waitForJobs: true
