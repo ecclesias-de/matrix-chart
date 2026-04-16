@@ -9,7 +9,7 @@ def template_homeserver_config():
 
     if config["database"]["name"] == "psycopg2":
         config["database"]["args"]["host"] = os.environ["DATABASE_HOST"]
-        config["database"]["args"]["port"] = os.environ.get("DATABASE_PORT", "5432")
+        config["database"]["args"]["port"] = int(os.environ.get("DATABASE_PORT", "5432"))
         # config["database"]["args"]["dbname"] = os.environ["DATABASE_NAME"]
         config["database"]["args"]["user"] = os.environ["DATABASE_USER"]
 
