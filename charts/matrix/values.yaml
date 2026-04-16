@@ -90,7 +90,7 @@ synapse:
     imagePullSecrets: []
     image:
       repository: registry.rz1.metaways.net/devops/synapse
-      tag: v1.135.2-mw1
+      tag: v1.151.0-0mw0
     resources: {}
 
   ingress:
@@ -222,7 +222,7 @@ nginx:
     imagePullSecrets: []
     image:
       repository: nginxinc/nginx-unprivileged
-      tag: 1.27.5-bookworm
+      tag: 1.29.8-trixie
     resources: {}
 
   ingress:
