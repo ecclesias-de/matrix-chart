@@ -17,10 +17,10 @@ def template_homeserver_config():
             config["database"]["args"]["password"] = f.read().strip()
 
         if "cp_min" not in  config["database"]["args"]:
-            config["database"]["args"]["cp_min"] = os.environ.get("DATABASE_CP_MIN", "5")
+            config["database"]["args"]["cp_min"] = int(os.environ.get("DATABASE_CP_MIN", "5"))
 
-        if "cp_cp_cp_maxmaxmin" not in  config["database"]["args"]:
-            config["database"]["args"]["cp_max"] = os.environ.get("DATABASE_CP_MAX", "10")
+        if "cp_max" not in  config["database"]["args"]:
+            config["database"]["args"]["cp_max"] = int(os.environ.get("DATABASE_CP_MAX", "10"))
 
     if config["redis"]["enabled"] == True:
         config["redis"]["host"] = os.environ["REDIS_HOST"]
