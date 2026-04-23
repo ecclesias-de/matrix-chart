@@ -1,9 +1,0 @@
-apiVersion: v2
-name: postgres
-description: postgres for ci
-type: application
-version: 0.0.0
-dependencies:
-  - name: postgresql
-    repository: oci://registry-1.docker.io/bitnamicharts
-    version: 14.x.x
