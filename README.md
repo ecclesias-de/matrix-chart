@@ -104,3 +104,7 @@ Therefore caveats apply:
   It may be possible to use values in another templated section be do not do that, unless there is really no better solution
 + Some configs get covered to json. The conversion happens before the template rendering. If the template is not valid json it will be escaped, sometimes... Templates like `{{ .Values.element.ingress.hostname }}` are ok. But templates link `{{ include "synapse.basename" . }}` are not.
   If you are using more complex templates it may require some try and error. (It will not always be possible to achieve the desired effect. E.g. see the matrix corporal HomeserverApiEndpoint hack)
+
+## 
+<img src="https://erzbistum-hamburg.de/_layout/EBHH_Logo_hoch.png" alt="erzbistum-hamburg logo" width="200"/></br>
+Mit freundlicher Unterstützung vom Erzbistum Hamburg
