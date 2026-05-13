@@ -3,7 +3,7 @@ livekitJwt:
     replicas: 2
     image:
       repository: ghcr.io/element-hq/lk-jwt-service
-      tag: 0.2.1
+      tag: 0.4.4
       imagePullPolicy: IfNotPresent
     resources:
       limits:
