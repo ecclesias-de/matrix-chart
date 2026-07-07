@@ -11,7 +11,7 @@ element:
     imagePullSecrets: []
     image:
       repository: vectorim/element-web
-      tag: v1.12.18
+      tag: v1.12.22
     resources: {}
 
   ingress:
