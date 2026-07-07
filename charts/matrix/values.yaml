@@ -90,7 +90,7 @@ synapse:
     imagePullSecrets: []
     image:
       repository: registry.rz1.metaways.net/devops/synapse
-      tag: v1.151.0-0mw1
+      tag: v1.155.0-0mw1
     resources: {}
 
   ingress:
