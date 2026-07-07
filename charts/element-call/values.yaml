@@ -15,7 +15,7 @@ elementCall:
     replicas: 2
     image:
       repository: ghcr.io/element-hq/element-call
-      tag: v0.14.1
+      tag: v0.21.0
       imagePullPolicy: IfNotPresent
     resources:
       limits:
