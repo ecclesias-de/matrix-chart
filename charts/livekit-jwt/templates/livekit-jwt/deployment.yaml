@@ -50,7 +50,7 @@ spec:
             readOnlyRootFilesystem: false
             allowPrivilegeEscalation: false
             capabilities:
-            drop: [ALL]
+              drop: [ALL]
           {{- end }}
           {{- include "livekitJwt.containerSecurityContext" . }}
 
