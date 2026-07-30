@@ -113,5 +113,9 @@ data:
       }
     }
 
+  # fix this:
+  # this dose not work. It differs depending on home server version and config
+  # we need to find a better way to disable password change.
+  # latest config from kb.
   capabilities: |
-    {"capabilities":{"m.room_versions":{"default":"10","available":{"1":"stable","2":"stable","3":"stable","4":"stable","5":"stable","6":"stable","7":"stable","8":"stable","9":"stable","10":"stable","11":"stable","12":"stable","org.matrix.msc3757.10":"unstable","org.matrix.msc3757.11":"unstable","org.matrix.hydra.11":"unstable"},"org.matrix.msc3244.room_capabilities":{"knock":{"preferred":"7","support":["7","8","9","10","11","12","org.matrix.msc3757.10","org.matrix.msc3757.11","org.matrix.hydra.11"]},"restricted":{"preferred":"9","support":["8","9","10","11","12","org.matrix.msc3757.10","org.matrix.msc3757.11","org.matrix.hydra.11"]}}},"m.change_password":{"enabled":false},"m.set_displayname":{"enabled":false},"m.set_avatar_url":{"enabled":true},"m.3pid_changes":{"enabled":true},"m.get_login_token":{"enabled":false},"m.profile_fields":{"enabled":true}}}
+    {"capabilities":{"m.room_versions":{"default":"10","available":{"1":"stable","2":"stable","3":"stable","4":"stable","5":"stable","6":"stable","7":"stable","8":"stable","9":"stable","10":"stable","11":"stable","12":"stable","org.matrix.msc3757.10":"unstable","org.matrix.msc3757.11":"unstable","org.matrix.hydra.11":"unstable"}},"m.change_password":{"enabled":false},"m.set_displayname":{"enabled":true},"m.set_avatar_url":{"enabled":true},"m.3pid_changes":{"enabled":true},"m.get_login_token":{"enabled":false},"m.profile_fields":{"enabled":true},"org.matrix.msc4140.delayed_events":{"max_delay_ms":86400000,"max_scheduled":100}}}
