@@ -40,6 +40,8 @@ spec:
           {{- define "livekitJwt.envFrom" }}
           envFrom:
             - secretRef:
+                name: {{ include "basename" . }}-env
+            - secretRef:
                 name: {{ template "livekitJwt.secret" . }}
           {{- end }}
           {{- include "livekitJwt.envFrom" . }}
