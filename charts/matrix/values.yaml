@@ -139,10 +139,6 @@ wellknown:
   client:
     m.homeserver:
       base_url: "https://{{ .Values.synapse.ingress.hostname }}/"
-    io.element.e2ee:
-        default: false
-        force_disable: true
-
 
   ingress:
     annotations:
