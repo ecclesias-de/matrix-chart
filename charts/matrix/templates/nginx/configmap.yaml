@@ -57,6 +57,10 @@ data:
       proxy_read_timeout 600s;
       client_max_body_size 100M;
 
+      {{- if .Values.nginx.extraConfig }}
+      {{ .Values.nginx.extraConfig | nindent 6 }}
+      {{- end }}
+
       location ~ ^/_matrix/client/v3/capabilities$ {
         add_header 'access-control-allow-origin' '*';
         add_header 'access-control-allow-methods' 'GET, HEAD, POST, PUT, DELETE, OPTIONS';
