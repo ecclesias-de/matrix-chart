@@ -17,7 +17,7 @@ spec:
                 name: {{ include "nginx.basename" . }}
                 port:
                   number: 80
-            path: /.well-known/matrix/
+            path: {{ .Values.wellknown.ingress.path }}
             pathType: ImplementationSpecific
   tls:
     - hosts:

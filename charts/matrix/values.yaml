@@ -144,6 +144,7 @@ wellknown:
     annotations:
       kubernetes.io/tls-acme: "true"
     enabled: true
+    path: /.well-known/matrix/
     # defaults to synapse.config.server_name
     # hostname:
 
