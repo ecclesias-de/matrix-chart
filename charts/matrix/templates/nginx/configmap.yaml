@@ -104,6 +104,7 @@ data:
 
       location ~ ^/.well-known/matrix/(client|server)$ {
         add_header 'Access-Control-Allow-Origin' '*';
+        add_header 'Cache-Control' 'public, max-age=14400, must-revalidate';
 
         root   /usr/share/nginx/html;
       }
