@@ -1,5 +1,6 @@
 import os
 import os.path
+import glob
 import sys
 import yaml
 
@@ -46,6 +47,8 @@ def template_homeserver_config():
     with open("/etc/synapse/form_secret") as f:
         config["form_secret"] = f.read().strip()
 
+    config["app_service_config_files"] = glob.glob('/etc/synapse/application-service/*')
+    
     path = "/tmp/homeserver.yaml"
     with open(path, "w") as f:
         yaml.dump(config, f)

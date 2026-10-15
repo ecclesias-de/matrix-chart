@@ -1,7 +1,7 @@
 livekitJwt:
   config:
     env:
-      LIVEKIT_FULL_ACCESS_HOMESERVERS: ""
+      LIVEKIT_FULL_ACCESS_HOMESERVERS: "*"
 
   deployment:
     replicas: 2

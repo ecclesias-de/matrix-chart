@@ -141,6 +141,12 @@ spec:
           subPath: shared_secret
           readOnly: true
         {{- end}}
+        {{- range $key, $value := .Values.synapse.appServiceConfig }}
+        - name: secret-application-service  
+          mountPath: /etc/synapse/application-service/{{ $key }}
+          subPath: {{ $key }}
+          readOnly: true
+        {{- end }}
       volumes:
       - name: data
         persistentVolumeClaim:
@@ -148,6 +154,9 @@ spec:
       - name: config
         configMap:
           name: {{ template "synapse.basename" . }}
+      - name: secret-application-service
+        secret:
+          secretName: {{ include "synapse.basename" . }}-application-service
       - name: secret
         secret:
           secretName: {{ template "synapse.secret" . }}
